@@ -702,7 +702,7 @@ void SM83::clock( void ) {
     // Only execute next opcode once cycles == 0 
     if( cycles == 0 ) {
 
-		DBG();
+		//DBG();
         // Fetch next opcode
         opcode = fetch_byte();
 

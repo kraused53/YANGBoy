@@ -5,7 +5,6 @@ Bus::Bus( void ) {
 
     // Connect CPU to bus and reset it
     cpu.connect_to_bus( this );
-    
     reset();
 }
 
@@ -14,7 +13,7 @@ Bus::~Bus( void ) {
 }
 
 uint8_t Bus::bus_read( uint16_t addr ) {
-    uint8_t ret = 0x00;
+    uint8_t ret = 0xFF;
 	if( addr == 0xFFFE ) {
 		printf( "FFFE Read\n" );
 	}
@@ -29,11 +28,10 @@ uint8_t Bus::bus_read( uint16_t addr ) {
 		ret = cart.ram_read( addr );
 	} else if ( ( addr >= WRAM_START ) && ( addr <= WRAM_END ) ) {
 		// WRAM - 8 KB
-		ret = ram.wram_read( addr );
+		ret = wram.read( addr );
 	} else if ( ( addr >= WRAM_MIRROR_START ) && ( addr <= WRAM_MIRROR_END ) ) {
 		// WRAM Mirror - >8 KB
-		// TODO WRAM Mirror
-		Logger::Err( std::format( "Read from ${:04X} not implemented!", addr ) );
+		ret = wram.read( addr - 0x2000 );
 	} else if ( ( addr >= OAM_START ) && ( addr <= OAM_END ) ) {
 		// OAM - 160 Bytes
 		//ret = ppu.oam_read( addr );
@@ -45,7 +43,7 @@ uint8_t Bus::bus_read( uint16_t addr ) {
 		}
 	} else if ( ( addr >= HRAM_START ) && ( addr <= HRAM_END ) ) {
 		// HRAM - 127 Bytes
-		ret = ram.hram_read( addr );
+		ret = hram.read( addr );
 
 	} else if ( addr == IE_ADDRESS ) {
 		// Interrupt Enable Register - 1 Byte
@@ -54,9 +52,10 @@ uint8_t Bus::bus_read( uint16_t addr ) {
 	}
     return ret;
 }
+
 void Bus::bus_write( uint16_t addr, uint8_t data ) {
 	if( addr == 0xFF01 ) {
-		//printf( "%c", data );
+		printf( "%c", data );
 	}
     if ( ( addr >= CART_ROM_START ) && ( addr <= CART_ROM_END ) ) {
 		// Cart ROM - 32 KB
@@ -69,11 +68,10 @@ void Bus::bus_write( uint16_t addr, uint8_t data ) {
 		cart.ram_write( addr, data );
 	} else if ( ( addr >= WRAM_START ) && ( addr <= WRAM_END ) ) {
 		// WRAM - 8 KB
-		ram.wram_write( addr, data );
+		wram.write( addr, data );
 	} else if ( ( addr >= WRAM_MIRROR_START ) && ( addr <= WRAM_MIRROR_END ) ) {
 		// WRAM Mirror - >8 KB
-		// TODO WRAM Mirror
-		Logger::Err( std::format( "Write to ${:04X} not implemented!", addr ) );
+		wram.write( addr-0x2000, data );
 	} else if ( ( addr >= OAM_START ) && ( addr <= OAM_END ) ) {
 		// OAM - 160 Bytes
 		//ppu.oam_write( addr, data );
@@ -82,7 +80,7 @@ void Bus::bus_write( uint16_t addr, uint8_t data ) {
 		//io.io_write( addr, data );
 	} else if ( ( addr >= HRAM_START ) && ( addr <= HRAM_END ) ) {
 		// HRAM - 127 Bytes
-		ram.hram_write( addr, data );
+		hram.write( addr, data );
 
 	} else if ( addr == IE_ADDRESS ) {
 		// Interrupt Enable Register - 1 Byte

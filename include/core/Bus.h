@@ -6,7 +6,8 @@
 
 #include "core/SM83.h"
 #include "core/Cart.h"
-#include "core/Ram.h"
+#include "core/Ram/WRAM.h"
+#include "core/Ram/HRAM.h"
 
 class Bus{
 private:
@@ -29,7 +30,8 @@ public:
     Cart cart;
 
     // System Ram
-    Ram ram;
+    WRAM wram;
+    HRAM hram;
 
     // Interrupt Register
     uint8_t IE;
