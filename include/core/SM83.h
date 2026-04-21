@@ -35,6 +35,7 @@ private:
     /* Emulation */
     bool halted;
     bool error;
+    bool ei_pending;
     bool interrupt_enabled;
     bool interrupt_enabled_delay;
     uint8_t opcode;

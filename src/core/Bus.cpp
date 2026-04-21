@@ -15,7 +15,7 @@ Bus::~Bus( void ) {
 uint8_t Bus::bus_read( uint16_t addr ) {
     uint8_t ret = 0xFF;
 	if( addr == 0xFFFE ) {
-		printf( "FFFE Read\n" );
+		//printf( "FFFE Read\n" );
 	}
     if ( ( addr >= CART_ROM_START ) && ( addr <= CART_ROM_END ) ) {
 		// Cart ROM - 32 KB
@@ -55,7 +55,7 @@ uint8_t Bus::bus_read( uint16_t addr ) {
 
 void Bus::bus_write( uint16_t addr, uint8_t data ) {
 	if( addr == 0xFF01 ) {
-		printf( "%c", data );
+		//printf( "%c", data );
 	}
     if ( ( addr >= CART_ROM_START ) && ( addr <= CART_ROM_END ) ) {
 		// Cart ROM - 32 KB

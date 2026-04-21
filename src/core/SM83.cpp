@@ -697,37 +697,48 @@ bool SM83::parse_conditional( COND cond ) {
 }
 
 /* Emulation */
-void SM83::clock( void ) {
-    
-    // Only execute next opcode once cycles == 0 
-    if( cycles == 0 ) {
+void SM83::clock(void) {
 
-		//DBG();
-        // Fetch next opcode
-        opcode = fetch_byte();
-
-        // Execute fetched opcode
-        ( this->*opcodes[opcode].operate )();
+    // Only advance if the previous instruction is done
+    if (cycles != 0) {
+        cycles--;
+        return;
     }
 
+    // Logging for GB Doctor
+    DBG();
 
-    // Handle interrupts
-    if( interrupt_enabled ) {
-        uint8_t interrupts_pending = read_byte( IE_ADDRESS ) & read_byte( IF ) & 0x1F;
+    // Fetch next opcode
+    opcode = fetch_byte();
 
-        if ( interrupts_pending != 0 ) {
-            parse_interrupts( interrupts_pending );
+    // Execute opcode
+    (this->*opcodes[opcode].operate)();
+
+    // If IE was called
+    if (ei_pending) {
+        // Delay the interrupt by one instruction
+        if (interrupt_enabled_delay) {
+            interrupt_enabled = true;
+            interrupt_enabled_delay = false;
+            ei_pending = false;
+        } else {
+            interrupt_enabled_delay = true;
         }
     }
-
-    // Interrupt latch AFTER check for interrupts
-    if( interrupt_enabled_delay ) {
-        interrupt_enabled_delay = false;
-        interrupt_enabled = true;
-    }
     
-    if( !halted ) {
-        cycles--;
+    // After an instruction has been executed and interrupts are enabled
+    if (interrupt_enabled) {
+
+        // Fetch waiting interrupts
+        uint8_t pending =
+            read_byte(IE_ADDRESS) &
+            read_byte(IF) &
+            0x1F;
+
+        // If there are any, deploy them
+        if (pending) {
+            parse_interrupts(pending);
+        }
     }
 }
 
@@ -737,10 +748,11 @@ void SM83::parse_interrupts( uint8_t interrupts_pending ) {
         halted = false;
     }
 
-    // Interrupts pending is non-zer, so there IS an interrupt pending:
+    // Interrupts pending is non-zero, so there IS an interrupt pending:
     // Push PC to stack
+    interrupt_enabled = false;
     push_to_stack( PC );
-    cycles += 5;
+    cycles += 20;
 
     // Check VBLANK interrupt
     if( interrupts_pending & IT_VBLANK ) {
@@ -750,32 +762,33 @@ void SM83::parse_interrupts( uint8_t interrupts_pending ) {
     }
 
     // Check LCDSTAT interrupt
-    if( interrupts_pending & IT_LCD_STAT ) {
+    else if( interrupts_pending & IT_LCD_STAT ) {
         bus->clear_interrupt( IT_LCD_STAT );
         PC = IV_LCD_STAT;
         return;
     }
     
     // Check TIMER interrupt
-    if( interrupts_pending & IT_TIMER ) {
+    else if( interrupts_pending & IT_TIMER ) {
         bus->clear_interrupt( IT_TIMER );
         PC = IV_TIMER;
         return;
     }
 
     // Check SERIAL interrupt
-    if( interrupts_pending & IT_SERIAL ) {
+    else if( interrupts_pending & IT_SERIAL ) {
         bus->clear_interrupt( IT_SERIAL );
-        PC = IT_SERIAL;
+        PC = IV_SERIAL;
         return;
     }
 
     // Check JOYPAD interrupt
-    if( interrupts_pending & IT_JOYPAD ) {
+    else if( interrupts_pending & IT_JOYPAD ) {
         bus->clear_interrupt( IT_JOYPAD );
         PC = IV_JOYPAD;
         return;
     }
+
 }
 
 void SM83::reset( void ) {
@@ -1426,7 +1439,7 @@ void SM83::DI( void ) {
 }
 
 void SM83::EI( void ) {
-    interrupt_enabled_delay = true;
+    ei_pending = true;
     cycles = 4;
 }
 
