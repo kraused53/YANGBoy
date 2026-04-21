@@ -21,7 +21,6 @@ TEST( CPU, Initialization ) {
     EXPECT_EQ( cpu.get_halted(), false );
     EXPECT_EQ( cpu.get_error(), false );
     EXPECT_EQ( cpu.get_ie(), false );
-    EXPECT_EQ( cpu.get_ied(), false );
     EXPECT_EQ( cpu.get_OC(), 0x00 );
     EXPECT_EQ( cpu.get_cycles(), 0 );
 }
@@ -49,7 +48,6 @@ TEST( CPU, NOP ) {
     EXPECT_EQ( system.cpu.get_halted(), false );
     EXPECT_EQ( system.cpu.get_error(), false );
     EXPECT_EQ( system.cpu.get_ie(), false );
-    EXPECT_EQ( system.cpu.get_ied(), false );
     EXPECT_EQ( system.cpu.get_OC(), 0x00 );
     EXPECT_EQ( system.cpu.get_cycles(), 4 );
 }

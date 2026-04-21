@@ -14,6 +14,7 @@ add_library(YANGBOY_CORE
     src/core/SM83.cpp
     src/core/Ram/WRAM.cpp
     src/core/Ram/HRAM.cpp
+    src/core/IO/Timer.cpp
 )
 
 # Logger library

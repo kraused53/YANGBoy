@@ -17,7 +17,7 @@ int main( void ) {
 	//system.cart.load_rom( "./roms/test/10-bit ops.gb" );
 	//system.cart.load_rom( "./roms/test/11-op a,(hl).gb" );
 
-	for( int i = 0; i < 100000000; i++ ) {
+	for( int i = 0; i < 10000000; i++ ) {
 		system.clock();
 	}
 

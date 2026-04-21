@@ -697,14 +697,8 @@ bool SM83::parse_conditional( COND cond ) {
 }
 
 /* Emulation */
-void SM83::clock(void) {
-
-    // Only advance if the previous instruction is done
-    if (cycles != 0) {
-        cycles--;
-        return;
-    }
-
+int SM83::step(void) {
+    cycles = 0;
     // Logging for GB Doctor
     DBG();
 
@@ -713,33 +707,32 @@ void SM83::clock(void) {
 
     // Execute opcode
     (this->*opcodes[opcode].operate)();
-
+    
     // If IE was called
-    if (ei_pending) {
-        // Delay the interrupt by one instruction
-        if (interrupt_enabled_delay) {
+    if (ei_pending > 0) {
+        ei_pending--;
+        if( ei_pending == 0 ) {
             interrupt_enabled = true;
-            interrupt_enabled_delay = false;
-            ei_pending = false;
-        } else {
-            interrupt_enabled_delay = true;
+            ime_block_counter = 1;
         }
     }
-    
+
     // After an instruction has been executed and interrupts are enabled
-    if (interrupt_enabled) {
+    if (interrupt_enabled && ime_block_counter == 0) {
 
         // Fetch waiting interrupts
-        uint8_t pending =
-            read_byte(IE_ADDRESS) &
-            read_byte(IF) &
-            0x1F;
+        uint8_t pending = read_byte(IE_ADDRESS) & read_byte(IF) & 0x1F;
 
         // If there are any, deploy them
         if (pending) {
             parse_interrupts(pending);
         }
     }
+    if( ime_block_counter > 0 ) {
+        ime_block_counter--;
+    }
+
+    return cycles;
 }
 
 void SM83::parse_interrupts( uint8_t interrupts_pending ) {
@@ -788,7 +781,6 @@ void SM83::parse_interrupts( uint8_t interrupts_pending ) {
         PC = IV_JOYPAD;
         return;
     }
-
 }
 
 void SM83::reset( void ) {
@@ -1439,7 +1431,7 @@ void SM83::DI( void ) {
 }
 
 void SM83::EI( void ) {
-    ei_pending = true;
+    ei_pending = 2;
     cycles = 4;
 }
 

@@ -8,6 +8,7 @@
 #include "core/Cart.h"
 #include "core/Ram/WRAM.h"
 #include "core/Ram/HRAM.h"
+#include "core/IO/Timer.h"
 
 class Bus{
 private:
@@ -32,6 +33,9 @@ public:
     // System Ram
     WRAM wram;
     HRAM hram;
+
+    // IO
+    Timer timer;
 
     // Interrupt Register
     uint8_t IE;

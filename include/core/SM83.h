@@ -35,9 +35,9 @@ private:
     /* Emulation */
     bool halted;
     bool error;
-    bool ei_pending;
+    int ei_pending;
     bool interrupt_enabled;
-    bool interrupt_enabled_delay;
+    int ime_block_counter;
     uint8_t opcode;
     unsigned int cycles;
 
@@ -205,12 +205,11 @@ public:
     bool get_halted( void ) { return halted; }
     bool  get_error( void ) { return  error; }
     bool     get_ie( void ) { return  interrupt_enabled; }
-    bool    get_ied( void ) { return  interrupt_enabled_delay; }
     unsigned int get_cycles( void ) { return cycles; }
     void DBG( void );
 
     /* Emulation */
-    void clock( void );
+    int step( void );
     void reset( void );
 
 };

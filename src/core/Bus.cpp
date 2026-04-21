@@ -5,6 +5,7 @@ Bus::Bus( void ) {
 
     // Connect CPU to bus and reset it
     cpu.connect_to_bus( this );
+	timer.connect_to_bus( this );
     reset();
 }
 
@@ -37,9 +38,15 @@ uint8_t Bus::bus_read( uint16_t addr ) {
 		//ret = ppu.oam_read( addr );
 	} else if ( ( addr >= IO_START ) && ( addr <= IO_END ) ) {
 		// IO - 128 Bytes
-		//ret = io.io_read( addr );
-		if( addr == 0xFF44 ) {
-			ret = 0x90;
+		switch( addr ) {
+			// Timer
+			case 0xFF04: ret = timer.read_DIV(); break;
+			case 0xFF05: ret = timer.read_TIMA(); break;
+			case 0xFF06: ret = timer.read_TMA(); break;
+			case 0xFF07: ret = timer.read_TAC(); break;
+			
+			// PPU
+			case 0xFF44: ret = 0x90; break;
 		}
 	} else if ( ( addr >= HRAM_START ) && ( addr <= HRAM_END ) ) {
 		// HRAM - 127 Bytes
@@ -77,7 +84,13 @@ void Bus::bus_write( uint16_t addr, uint8_t data ) {
 		//ppu.oam_write( addr, data );
 	} else if ( ( addr >= IO_START ) && ( addr <= IO_END ) ) {
 		// IO - 128 Bytes
-		//io.io_write( addr, data );
+		switch( addr ) {
+			// Timer
+			case 0xFF04: timer.write_DIV( data ); break;
+			case 0xFF05: timer.write_TIMA( data ); break;
+			case 0xFF06: timer.write_TMA( data ); break;
+			case 0xFF07: timer.write_TAC( data ); break;
+		}
 	} else if ( ( addr >= HRAM_START ) && ( addr <= HRAM_END ) ) {
 		// HRAM - 127 Bytes
 		hram.write( addr, data );
@@ -91,7 +104,10 @@ void Bus::bus_write( uint16_t addr, uint8_t data ) {
 
 void Bus::clock( void ) {
     // Clock CPU
-    cpu.clock();
+    int cycles = cpu.step();
+
+	// Clock timer
+	timer.clock( cycles );
 
     // Clock APU
 
@@ -104,6 +120,7 @@ void Bus::clock( void ) {
 void Bus::reset( void ) {
     // Reset System Objects
     cpu.reset();
+	timer.reset();
 
 	IE = 0x00;
 }
