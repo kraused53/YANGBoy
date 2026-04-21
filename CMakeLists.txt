@@ -11,8 +11,9 @@ include(CTest)
 add_library(YANGBOY_CORE
     src/core/Bus.cpp
     src/core/Cart.cpp
-    src/core/Ram.cpp
     src/core/SM83.cpp
+    src/core/Ram/WRAM.cpp
+    src/core/Ram/HRAM.cpp
 )
 
 # Logger library
