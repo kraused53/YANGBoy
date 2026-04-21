@@ -5,7 +5,6 @@ Bus::Bus( void ) {
 
     // Connect CPU to bus and reset it
     cpu.connect_to_bus( this );
-    
     reset();
 }
 
@@ -14,7 +13,7 @@ Bus::~Bus( void ) {
 }
 
 uint8_t Bus::bus_read( uint16_t addr ) {
-    uint8_t ret = 0x00;
+    uint8_t ret = 0xFF;
 	if( addr == 0xFFFE ) {
 		printf( "FFFE Read\n" );
 	}
@@ -32,8 +31,7 @@ uint8_t Bus::bus_read( uint16_t addr ) {
 		ret = ram.wram_read( addr );
 	} else if ( ( addr >= WRAM_MIRROR_START ) && ( addr <= WRAM_MIRROR_END ) ) {
 		// WRAM Mirror - >8 KB
-		// TODO WRAM Mirror
-		Logger::Err( std::format( "Read from ${:04X} not implemented!", addr ) );
+		ret = ram.wram_read( addr - 0x2000);
 	} else if ( ( addr >= OAM_START ) && ( addr <= OAM_END ) ) {
 		// OAM - 160 Bytes
 		//ret = ppu.oam_read( addr );
@@ -54,6 +52,7 @@ uint8_t Bus::bus_read( uint16_t addr ) {
 	}
     return ret;
 }
+
 void Bus::bus_write( uint16_t addr, uint8_t data ) {
 	if( addr == 0xFF01 ) {
 		//printf( "%c", data );
