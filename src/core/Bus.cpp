@@ -100,7 +100,14 @@ void Bus::reset() {
   io.reset();
 }
 
-void Bus::clock() { cpu.step(); }
+void Bus::clock() {
+  int cpu_cycles = cpu.step();
+  io.timer_tick(cpu_cycles);
+  if (io.timer_interrupt) {
+    io.timer_interrupt = false;
+    request_interrupt(TIMER_FLAG);  // bit 2 = timer interrupt
+  }
+}
 
 void Bus::handle_bus_error(bool write, uint16_t addr, const char* msg) {
   spdlog::error("Invalid {} address ${:04X}: {}",
@@ -113,4 +120,27 @@ void Bus::handle_bus_error(bool write, uint16_t addr, const char* msg) {
 
 bool Bus::is_between(uint16_t addr, uint16_t range_start, uint16_t range_end) {
   return (addr >= range_start) && (addr <= range_end);
+}
+
+// Interrupts
+uint8_t Bus::get_ie() { return ram.ie_read(); }
+
+uint8_t Bus::get_if() { return io.get_if(); }
+
+void Bus::set_if(uint8_t val) { io.set_if(val); }
+
+void Bus::request_interrupt(uint8_t interrupt_flag) {
+  uint8_t if_register = io.get_if();
+  if_register |= interrupt_flag;
+  io.set_if(if_register);
+
+  switch (interrupt_flag) {
+    case VBLANK_FLAG: spdlog::debug("VBLANK interrupt requested"); break;
+    case LCD_FLAG: spdlog::debug("LCD interrupt requested"); break;
+    case TIMER_FLAG: spdlog::debug("TIMER interrupt requested"); break;
+    case SERIAL_FLAG: spdlog::debug("SERIAL interrupt requested"); break;
+    case JOYPAD_FLAG: spdlog::debug("JOYPAD interrupt requested"); break;
+
+    default: spdlog::warn("Unknown interrupt requested..."); break;
+  }
 }

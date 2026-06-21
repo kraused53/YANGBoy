@@ -39,6 +39,10 @@ class Bus : public IBus {
   }
 
   void clock() override { cpu.step(); }
+
+  uint8_t get_ie() override { return 0xE0; }
+  uint8_t get_if() override { return 0xE0; }
+  void set_if(uint8_t val) override {}
 };
 }  // namespace TestBus
 

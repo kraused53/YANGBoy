@@ -10,4 +10,9 @@ class IBus {
   virtual void reset() = 0;
   virtual void clock() = 0;
   virtual ~IBus();
+
+  // Interrupts
+  virtual uint8_t get_ie() = 0;
+  virtual uint8_t get_if() = 0;
+  virtual void set_if(uint8_t val) = 0;
 };

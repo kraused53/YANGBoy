@@ -668,8 +668,40 @@ bool SM83::parse_conditional(COND cond) {
 /* Emulation */
 int SM83::step(void) {
   cycles = 0;
-  // Logging for GB Doctor
-  //  DBG();
+
+  // --- Interrupt check ---
+  uint8_t ie = bus->get_ie();
+  uint8_t if_ = bus->get_if();
+  uint8_t pending = ie & if_ & 0x1F;
+
+  if (pending) {
+    halted = false;  // HALT exits regardless of IME
+
+    if (interrupt_enabled) {
+      interrupt_enabled = false;
+
+      // Find the highest-priority pending interrupt (bit 0 = highest)
+      for (int bit = 0; bit < 5; bit++) {
+        if (pending & (1 << bit)) {
+          // Clear the bit in IF
+          bus->set_if(if_ & ~(1 << bit));
+
+          // Push PC and jump to the vector
+          push_to_stack(regs.pc);
+          regs.pc = 0x0040 + (bit * 0x08);
+
+          cycles += 20;  // ISR dispatch takes 5 M-cycles
+          return cycles;
+        }
+      }
+    }
+  }
+
+  // EI delay — IME takes effect after the instruction following EI
+  if (interrupt_enable_pending) {
+    interrupt_enabled = true;
+    interrupt_enable_pending = false;
+  }
 
   if (!halted) {
     // Fetch next opcode
@@ -691,6 +723,8 @@ int SM83::step(void) {
         "E:{:02X} | H:{:02X} L:{:02X} | SP:{:04X} | PC:{:04X} | CYC:{} {}{}",
         regs.a, regs.f, regs.b, regs.c, regs.d, regs.e, regs.h, regs.l, regs.sp,
         regs.pc, cycles, error ? "[ERR] " : "", halted ? "[HLT]" : "");
+  } else {
+    cycles += 4;
   }
   return cycles;
 }
@@ -1214,6 +1248,10 @@ void SM83::MOV_mRP_RG(void) {
 }
 
 void SM83::HALT(void) {
+  if (interrupt_enable_pending) {
+    interrupt_enabled = true;
+    interrupt_enable_pending = false;
+  }
   halted = true;
   cycles = 4;
 }
@@ -1457,7 +1495,7 @@ void SM83::CP(void) {
 void SM83::RET(void) {
   if (parse_conditional(GET_COND)) {
     regs.pc = pop_from_stack();
-    cycles = 20;
+    cycles = (GET_COND == CN_NONE) ? 16 : 20;
   } else {
     cycles = 8;
   }
@@ -1541,9 +1579,10 @@ void SM83::RST(void) {
 }
 
 void SM83::RETI(void) {
-  interrupt_enable_pending = true;
   regs.pc = pop_from_stack();
-  cycles = 16;
+  interrupt_enabled = true;  // immediate, not pending
+  interrupt_enable_pending = false;
+  cycles += 16;
 }
 
 void SM83::LDH(void) {

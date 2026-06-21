@@ -4,6 +4,7 @@
 #include <string>
 
 #include "IBus.h"
+#include "Interrupts.h"
 #include "core/Cartridge.h"
 #include "core/IO.h"
 #include "core/Ram.h"
@@ -35,5 +36,12 @@ class Bus : public IBus {
   // Declare an error
   void handle_bus_error(bool write, uint16_t addr, const char* msg);
 
+  // Utility
   bool is_between(uint16_t addr, uint16_t range_start, uint16_t range_end);
+
+  // Interrupts
+  uint8_t get_ie() override;
+  uint8_t get_if() override;
+  void set_if(uint8_t val) override;
+  void request_interrupt(uint8_t interrupt_flag);
 };
