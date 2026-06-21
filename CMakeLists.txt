@@ -24,6 +24,7 @@ FetchContent_MakeAvailable(spdlog)
 # Core library
 add_library(YANGBOY_CORE
     src/core/Bus.cpp
+    src/core/IBus.cpp
     #src/core/Cart.cpp
     src/core/SM83.cpp
     #src/core/Ram/WRAM.cpp

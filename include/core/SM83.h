@@ -52,16 +52,13 @@ struct Registers {
 };
 
 // Forward declare Bus class
-class Bus;
+class IBus;
 
 class SM83 {
  public:
   /* Constructors */
   SM83(void);
   ~SM83(void);
-
-  /* Connect CPU to given bus */
-  void connect_to_bus(Bus* b) { bus = b; }
 
   void DBG(void);
 
@@ -77,7 +74,8 @@ class SM83 {
   unsigned int cycles;
 
   /* Memory */
-  Bus* bus = nullptr;
+  IBus* bus = nullptr;
+  void connect_to_bus(IBus* b) { bus = b; }
   uint8_t read_byte(uint16_t addr);
   uint16_t read_word(uint16_t addr);
   uint8_t fetch_byte(void);

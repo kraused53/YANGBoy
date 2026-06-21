@@ -6,14 +6,43 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
-#include "core/Bus.h"
+#include "core/IBus.h"
+#include "core/SM83.h"
 using json = nlohmann::json;
 
-bool json_test(std::string pth, Bus* b);
-bool test_passed(json data, Bus* b, int test_number);
-void load_initial_state(json data, Bus* b);
+#include <array>
+namespace TestBus {
+class Bus : public IBus {
+ public:
+  // Fake memory
+  std::array<uint8_t, 64 * 1024> ram;
 
-void load_initial_state(json data, Bus* b) {
+  Bus() {
+    // Connect CPU to communication bus
+    cpu.connect_to_bus(this);
+
+    reset();
+  }
+
+  // IBus systems
+  SM83 cpu;
+
+  uint8_t read(uint16_t addr) override { return ram[addr]; }
+
+  void write(uint16_t addr, uint8_t data) override { ram[addr] = data; }
+
+  void reset() override {
+    // Clear RAM contents, just in case :P
+    for (auto& i : ram) i = 0x00;
+
+    cpu.reset();
+  }
+
+  void clock() override { cpu.step(); }
+};
+}  // namespace TestBus
+
+void load_initial_state(json data, TestBus::Bus* b) {
   b->cpu.regs.a = uint8_t(data["initial"]["a"]);
   b->cpu.regs.f = uint8_t(data["initial"]["f"]);
   b->cpu.regs.b = uint8_t(data["initial"]["b"]);
@@ -28,7 +57,7 @@ void load_initial_state(json data, Bus* b) {
   for (auto& i : data["initial"]["ram"]) b->ram[uint16_t(i[0])] = uint8_t(i[1]);
 }
 
-bool test_passed(json data, Bus* b, int test_number) {
+bool test_passed(json data, TestBus::Bus* b, int test_number) {
   auto check8 = [&](const char* name, uint8_t actual,
                     uint8_t expected) -> bool {
     if (actual != expected) {
@@ -79,7 +108,7 @@ bool test_passed(json data, Bus* b, int test_number) {
   return true;
 }
 
-bool json_test(std::string pth, Bus* b) {
+bool json_test(std::string pth, TestBus::Bus* b) {
   std::cout << std::format("Testing file: {:s}\n", pth);
   std::cout << "--------------------------------------------------\n";
 
@@ -110,9 +139,12 @@ bool json_test(std::string pth, Bus* b) {
 // ============================================================
 //  Helper macro — keeps each TEST() body to one line
 // ============================================================
+#ifndef JSON_TEST_DIR
+#define JSON_TEST_DIR "JSON"
+#endif
 #define JSON_TEST(suite, name, file)                                        \
   TEST(suite, name) {                                                       \
-    Bus system;                                                             \
+    TestBus::Bus system;                                                    \
     EXPECT_TRUE(                                                            \
         json_test(std::string(JSON_TEST_DIR) + "/" file ".json", &system)); \
   }

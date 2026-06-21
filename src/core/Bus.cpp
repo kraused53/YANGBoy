@@ -3,6 +3,8 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
+#include "Addresses.h"
+
 Bus::Bus() {
   // Connect CPU to communication bus
   cpu.connect_to_bus(this);
