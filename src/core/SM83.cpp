@@ -671,40 +671,52 @@ int SM83::step(void) {
   // Logging for GB Doctor
   //  DBG();
 
-  // Fetch next opcode
-  opcode = fetch_byte();
-  spdlog::trace("Fetch opcode] ${:04X} -> {:02X}", regs.pc - 1, opcode);
+  if (!halted) {
+    // Fetch next opcode
+    opcode = fetch_byte();
+    spdlog::debug(
+        "Fetch opcode] ${:04X} -> {:02X} Memory: [ {:02X} {:02X} {:02X} ]",
+        regs.pc - 1, opcode, read_byte(regs.pc - 1), read_byte(regs.pc),
+        read_byte(regs.pc + 1));
 
-  // Execute opcode
-  (this->*opcodes[opcode].operate)();
-  spdlog::trace(
-      "   CPU State] A:{:02X} F:{:02X} | B:{:02X} C:{:02X} | D:{:02X} "
-      "E:{:02X} | H:{:02X} L:{:02X} | SP:{:04X} | PC:{:04X} | CYC:{} {}{}",
-      regs.a, regs.f, regs.b, regs.c, regs.d, regs.e, regs.h, regs.l, regs.sp,
-      regs.pc, cycles, error ? "[ERR] " : "", halted ? "[HLT]" : "");
+    if (error) {
+      spdlog::error("There was an error fetching the opcode!, exiting...");
+      return 1;
+    }
 
+    // Execute opcode
+    (this->*opcodes[opcode].operate)();
+    spdlog::debug(
+        "   CPU State] A:{:02X} F:{:02X} | B:{:02X} C:{:02X} | D:{:02X} "
+        "E:{:02X} | H:{:02X} L:{:02X} | SP:{:04X} | PC:{:04X} | CYC:{} {}{}",
+        regs.a, regs.f, regs.b, regs.c, regs.d, regs.e, regs.h, regs.l, regs.sp,
+        regs.pc, cycles, error ? "[ERR] " : "", halted ? "[HLT]" : "");
+  }
   return cycles;
 }
 
 void SM83::reset(void) {
   spdlog::info("CPU Reset...");
 
-  regs.a = 0x00;
-  regs.f = 0x00;
+  regs.a = 0x01;
+  regs.f = 0xB0;
   regs.b = 0x00;
-  regs.c = 0x00;
+  regs.c = 0x13;
   regs.d = 0x00;
-  regs.e = 0x00;
-  regs.h = 0x00;
-  regs.l = 0x00;
+  regs.e = 0xD8;
+  regs.h = 0x01;
+  regs.l = 0x4D;
 
-  regs.pc = 0x0000;
-  regs.sp = 0x0000;
+  regs.pc = 0x0100;
+  regs.sp = 0xFFFE;
 
   halted = false;
   error = false;
   opcode = 0x00;
   cycles = 0;
+
+  interrupt_enabled = false;
+  interrupt_enable_pending = false;
 }
 
 /* Utility */
@@ -1529,7 +1541,7 @@ void SM83::RST(void) {
 }
 
 void SM83::RETI(void) {
-  tmp_interrupt = true;
+  interrupt_enable_pending = true;
   regs.pc = pop_from_stack();
   cycles = 16;
 }
@@ -1577,9 +1589,16 @@ void SM83::ADD_SP_IMM(void) {
   }
 }
 
-void SM83::DI(void) { UNI(); }
+void SM83::DI(void) {
+  interrupt_enable_pending = false;
+  interrupt_enabled = false;
+  cycles = 4;
+}
 
-void SM83::EI(void) { UNI(); }
+void SM83::EI(void) {
+  interrupt_enable_pending = true;
+  cycles = 4;
+}
 
 void SM83::LD_SP_HL(void) {
   regs.sp = regs.hl;

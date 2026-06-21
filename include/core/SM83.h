@@ -69,7 +69,8 @@ class SM83 {
   /* Emulation */
   bool halted;
   bool error;
-  bool tmp_interrupt;
+  bool interrupt_enabled;
+  bool interrupt_enable_pending;
   uint8_t opcode;
   unsigned int cycles;
 
