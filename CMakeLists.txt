@@ -11,6 +11,15 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_SOURCE_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_SOURCE_DIR}/bin)
 
 include(CTest)
+include(FetchContent)
+
+FetchContent_Declare(
+    spdlog
+    GIT_REPOSITORY https://github.com/gabime/spdlog.git
+    GIT_TAG        v1.14.1
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+FetchContent_MakeAvailable(spdlog)
 
 # Core library
 add_library(YANGBOY_CORE
@@ -25,6 +34,9 @@ add_library(YANGBOY_CORE
 # Include directories
 target_include_directories(YANGBOY_CORE PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
+# Add spdlog as a public library
+target_link_libraries(YANGBOY_CORE PUBLIC spdlog::spdlog)
+
 # Main executable
 add_executable(yangboy src/main.cpp)
 
@@ -32,7 +44,6 @@ target_link_libraries(yangboy PRIVATE YANGBOY_CORE)
 
 # ================= TESTING =================
 if(BUILD_TESTING)
-    include(FetchContent)
 
     FetchContent_Declare(
         googletest

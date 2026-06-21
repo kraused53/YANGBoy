@@ -1,11 +1,15 @@
 #include "core/SM83.h"
 
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/spdlog.h>
+
 #include <iostream>
 
 #include "core/Bus.h"
 
 /* Constructors */
 SM83::SM83(void) {
+  spdlog::info("Initializing CPU...");
   reset();
 
   // Alias class name to make lines shorter
@@ -604,6 +608,16 @@ void SM83::write_word(uint16_t addr, uint16_t data) {
 
 /* Flags */
 void SM83::set_flag(FLAG f, bool val) {
+  switch (f) {
+    case F_Z: spdlog::trace("Zero flag {}", val ? "set" : "cleared"); break;
+    case F_N: spdlog::trace("Sign flag {}", val ? "set" : "cleared"); break;
+    case F_H:
+      spdlog::trace("Half-Carry flag {}", val ? "set" : "cleared");
+      break;
+    case F_C: spdlog::trace("Carry flag {}", val ? "set" : "cleared"); break;
+    default: spdlog::trace("Unknown flag {}", val ? "set" : "cleared"); break;
+  }
+
   if (val) {
     regs.f |= f;
   } else {
@@ -659,14 +673,22 @@ int SM83::step(void) {
 
   // Fetch next opcode
   opcode = fetch_byte();
+  spdlog::trace("Fetch opcode] ${:04X} -> {:02X}", regs.pc - 1, opcode);
 
   // Execute opcode
   (this->*opcodes[opcode].operate)();
+  spdlog::trace(
+      "   CPU State] A:{:02X} F:{:02X} | B:{:02X} C:{:02X} | D:{:02X} "
+      "E:{:02X} | H:{:02X} L:{:02X} | SP:{:04X} | PC:{:04X} | CYC:{} {}{}",
+      regs.a, regs.f, regs.b, regs.c, regs.d, regs.e, regs.h, regs.l, regs.sp,
+      regs.pc, cycles, error ? "[ERR] " : "", halted ? "[HLT]" : "");
 
   return cycles;
 }
 
 void SM83::reset(void) {
+  spdlog::info("CPU Reset...");
+
   regs.a = 0x00;
   regs.f = 0x00;
   regs.b = 0x00;
@@ -735,6 +757,8 @@ void SM83::DBG(void) {
 
 /* Opcodes */
 void SM83::UNI(void) {
+  spdlog::error("The CPU has encountered an error executing opcode: {:02X}",
+                opcode);
   halted = true;
   error = true;
   cycles = 1;
