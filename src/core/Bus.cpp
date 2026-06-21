@@ -2,7 +2,9 @@
 
 Bus::Bus() {
   // Connect CPU to communication bus
-  cpu.ConnectBus(this);
+  cpu.connect_to_bus(this);
+
+  ram.resize(0x10000);  // 64KB of addressable memory
 
   reset();
 }

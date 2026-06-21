@@ -6,10 +6,6 @@
 #include "core/SM83.h"
 
 class Bus {
- private:
-  // Fake memory
-  std::vector<uint8_t> ram;
-
  public:
   Bus();
   ~Bus();
@@ -24,4 +20,7 @@ class Bus {
   // Memory access
   void write(uint16_t addr, uint8_t data);
   uint8_t read(uint16_t addr);
+
+  // Fake memory
+  std::vector<uint8_t> ram;
 };

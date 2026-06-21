@@ -5,6 +5,11 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Redirect output to bin directory
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_SOURCE_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_SOURCE_DIR}/bin)
+
 include(CTest)
 
 # Core library
@@ -38,19 +43,13 @@ if(BUILD_TESTING)
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(googletest)
 
-    add_executable(
-        cpu_tests
-        tests/cpu/cpu_testing.cpp
+    FetchContent_Declare(
+        nlohmann_json
+        URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
     )
 
-    target_link_libraries(
-        cpu_tests
-        PRIVATE
-            YANGBOY_CORE
-            GTest::gtest
-            GTest::gtest_main
-    )
+    FetchContent_MakeAvailable(nlohmann_json)
 
-    include(GoogleTest)
-    gtest_discover_tests(cpu_tests)
+    add_subdirectory(tests)
 endif()
