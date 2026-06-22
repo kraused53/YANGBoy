@@ -12,15 +12,15 @@ int main() {
   spdlog::set_level(spdlog::level::info);  // set via config/arg in practice
 
   // std::filesystem::path path = "test_roms/cpu/01-special.gb";
-  std::filesystem::path path = "test_roms/cpu/02-interrupts.gb";
-  // std::filesystem::path path = "test_roms/cpu/03-op sp,hl.gb";
-  // std::filesystem::path path = "test_roms/cpu/04-op r,imm.gb";
-  // std::filesystem::path path = "test_roms/cpu/05-op rp.gb";
-  // std::filesystem::path path = "test_roms/cpu/06-ld r,r.gb";
-  // std::filesystem::path path = "test_roms/cpu/07-jr,jp,call,ret,rst.gb";
-  // std::filesystem::path path = "test_roms/cpu/08-misc instrs.gb";
-  // std::filesystem::path path = "test_roms/cpu/09-op r,r.gb";
-  // std::filesystem::path path = "test_roms/cpu/10-bit ops.gb";
+  // std::filesystem::path path = "test_roms/cpu/02-interrupts.gb";
+  //  std::filesystem::path path = "test_roms/cpu/03-op sp,hl.gb";
+  //  std::filesystem::path path = "test_roms/cpu/04-op r,imm.gb";
+  //  std::filesystem::path path = "test_roms/cpu/05-op rp.gb";
+  //  std::filesystem::path path = "test_roms/cpu/06-ld r,r.gb";
+  //  std::filesystem::path path = "test_roms/cpu/07-jr,jp,call,ret,rst.gb";
+  //  std::filesystem::path path = "test_roms/cpu/08-misc instrs.gb";
+  //  std::filesystem::path path = "test_roms/cpu/09-op r,r.gb";
+  //  std::filesystem::path path = "test_roms/cpu/10-bit ops.gb";
   // std::filesystem::path path = "test_roms/cpu/11-op a,(hl).gb";
 
   Bus system;

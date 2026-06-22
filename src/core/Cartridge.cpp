@@ -113,12 +113,12 @@ size_t Cartridge::get_ram_offset() { return RAM_BANK_SIZE * current_ram_bank; }
 
 /* Load a cartridge */
 bool Cartridge::load_rom(const std::filesystem::path& rom_path) {
-  spdlog::info("Loading ROM file: {}", rom_path.c_str());
+  spdlog::info("Loading ROM file: {}", rom_path.string());
 
   // Attempt to open rom at given path
   std::ifstream file(rom_path, std::ios::binary | std::ios::ate);
   if (!file) {
-    spdlog::error("Error opening the file: {}", rom_path.c_str());
+    spdlog::error("Error opening the file: {}", rom_path.string());
     return false;
   }
   spdlog::trace("File opened without error...");
@@ -135,10 +135,18 @@ bool Cartridge::load_rom(const std::filesystem::path& rom_path) {
   }
 
   switch (buffer[0x0147]) {
-    case 0x00: spdlog::info("ROM uses no mappers"); break;
-    case 0x01: spdlog::info("ROM uses MBC1"); break;
-    case 0x02: spdlog::info("ROM uses MBC1 + RAM"); break;
-    case 0x03: spdlog::info("ROM uses MBC1 + RAM + Battery"); break;
+    case 0x00:
+      spdlog::info("ROM uses no mappers");
+      break;
+    case 0x01:
+      spdlog::info("ROM uses MBC1");
+      break;
+    case 0x02:
+      spdlog::info("ROM uses MBC1 + RAM");
+      break;
+    case 0x03:
+      spdlog::info("ROM uses MBC1 + RAM + Battery");
+      break;
     default:
       spdlog::error("ERROR: ROM uses un supported mapper: {:02X}",
                     buffer[0x0147]);
@@ -147,19 +155,45 @@ bool Cartridge::load_rom(const std::filesystem::path& rom_path) {
 
   // Fetch ROM Bank Count
   switch (buffer[0x0148]) {
-    case 0x00: rom_bank_count = 2; break;
-    case 0x01: rom_bank_count = 4; break;
-    case 0x02: rom_bank_count = 8; break;
-    case 0x03: rom_bank_count = 16; break;
-    case 0x04: rom_bank_count = 32; break;
-    case 0x05: rom_bank_count = 64; break;
-    case 0x06: rom_bank_count = 128; break;
-    case 0x07: rom_bank_count = 256; break;
-    case 0x08: rom_bank_count = 512; break;
-    case 0x52: rom_bank_count = 72; break;
-    case 0x53: rom_bank_count = 80; break;
-    case 0x54: rom_bank_count = 96; break;
-    default: rom_bank_count = 0; break;
+    case 0x00:
+      rom_bank_count = 2;
+      break;
+    case 0x01:
+      rom_bank_count = 4;
+      break;
+    case 0x02:
+      rom_bank_count = 8;
+      break;
+    case 0x03:
+      rom_bank_count = 16;
+      break;
+    case 0x04:
+      rom_bank_count = 32;
+      break;
+    case 0x05:
+      rom_bank_count = 64;
+      break;
+    case 0x06:
+      rom_bank_count = 128;
+      break;
+    case 0x07:
+      rom_bank_count = 256;
+      break;
+    case 0x08:
+      rom_bank_count = 512;
+      break;
+    case 0x52:
+      rom_bank_count = 72;
+      break;
+    case 0x53:
+      rom_bank_count = 80;
+      break;
+    case 0x54:
+      rom_bank_count = 96;
+      break;
+    default:
+      rom_bank_count = 0;
+      break;
   }
 
   spdlog::info("ROM has {:d} banks", rom_bank_count);
@@ -191,11 +225,21 @@ bool Cartridge::load_rom(const std::filesystem::path& rom_path) {
 
   // Fetch RAM Bank Count
   switch (buffer[0x0149]) {
-    case 0x02: ram_bank_count = 1; break;   //   8 KB
-    case 0x03: ram_bank_count = 4; break;   //  32 KB
-    case 0x04: ram_bank_count = 16; break;  // 128 KB
-    case 0x05: ram_bank_count = 8; break;   //  64 KB
-    default: ram_bank_count = 0; break;     // No RAM
+    case 0x02:
+      ram_bank_count = 1;
+      break;  //   8 KB
+    case 0x03:
+      ram_bank_count = 4;
+      break;  //  32 KB
+    case 0x04:
+      ram_bank_count = 16;
+      break;  // 128 KB
+    case 0x05:
+      ram_bank_count = 8;
+      break;  //  64 KB
+    default:
+      ram_bank_count = 0;
+      break;  // No RAM
   }
   spdlog::info("RAM has {:d} banks", ram_bank_count);
 

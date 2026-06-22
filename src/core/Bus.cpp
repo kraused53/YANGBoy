@@ -25,7 +25,7 @@ void Bus::write(uint16_t addr, uint8_t data) {
       test_done = true;
     }
 
-    if (test_rom_log.back() == '\n') {
+    if (!test_rom_log.empty() && test_rom_log.back() == '\n') {
       if (test_rom_log == "Passed\n") {
         test_done = true;
       }
@@ -53,7 +53,7 @@ void Bus::write(uint16_t addr, uint8_t data) {
   } else if (is_between(addr, IO_START, IO_END)) {
     if (addr == DIV) {
       timer.clear_div();
-    } else if (addr = DMA) {
+    } else if (addr == DMA) {
       dma_transfer(data);
     } else {
       io.io_write(addr, data);
@@ -145,13 +145,25 @@ void Bus::request_interrupt(uint8_t interrupt_flag) {
   io.set_if(if_register);
 
   switch (interrupt_flag) {
-    case VBLANK_FLAG: spdlog::debug("VBLANK interrupt requested"); break;
-    case LCD_FLAG: spdlog::debug("LCD interrupt requested"); break;
-    case TIMER_FLAG: spdlog::debug("TIMER interrupt requested"); break;
-    case SERIAL_FLAG: spdlog::debug("SERIAL interrupt requested"); break;
-    case JOYPAD_FLAG: spdlog::debug("JOYPAD interrupt requested"); break;
+    case VBLANK_FLAG:
+      spdlog::debug("VBLANK interrupt requested");
+      break;
+    case LCD_FLAG:
+      spdlog::debug("LCD interrupt requested");
+      break;
+    case TIMER_FLAG:
+      spdlog::debug("TIMER interrupt requested");
+      break;
+    case SERIAL_FLAG:
+      spdlog::debug("SERIAL interrupt requested");
+      break;
+    case JOYPAD_FLAG:
+      spdlog::debug("JOYPAD interrupt requested");
+      break;
 
-    default: spdlog::warn("Unknown interrupt requested..."); break;
+    default:
+      spdlog::warn("Unknown interrupt requested...");
+      break;
   }
 }
 

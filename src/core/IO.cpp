@@ -40,8 +40,12 @@ uint8_t IO::io_read(uint16_t addr) {
       break;
 
     // Serial data transfer
-    case SB: data = iSB; break;
-    case SC: data = iSC; break;
+    case SB:
+      data = iSB;
+      break;
+    case SC:
+      data = iSC;
+      break;
 
     // Interrupt flags
     case IF:
@@ -49,27 +53,55 @@ uint8_t IO::io_read(uint16_t addr) {
       break;
 
       // Timer
-    case TIMA: data = iTIMA; break;
-    case TMA: data = iTMA; break;
-    case TAC: data = iTAC | 0xF8; break;
+    case TIMA:
+      data = iTIMA;
+      break;
+    case TMA:
+      data = iTMA;
+      break;
+    case TAC:
+      data = iTAC | 0xF8;
+      break;
 
     // PPU
-    case LCDC: data = iLCDC; break;
-    case STAT: data = iSTAT; break;
-    case SCY: data = iSCY; break;
-    case SCX: data = iSCX; break;
-    case LY: data = iLY; break;
-    case LYC: data = iLYC; break;
-    case BGP: data = iBGP; break;
-    case OBP0: data = iOBP0; break;
-    case OBP1: data = iOBP1; break;
-    case WY: data = iWY; break;
-    case WX: data = iWX; break;
+    case LCDC:
+      data = iLCDC;
+      break;
+    case STAT:
+      data = iSTAT;
+      break;
+    case SCY:
+      data = iSCY;
+      break;
+    case SCX:
+      data = iSCX;
+      break;
+    case LY:
+      data = iLY;
+      break;
+    case LYC:
+      data = iLYC;
+      break;
+    case BGP:
+      data = iBGP;
+      break;
+    case OBP0:
+      data = iOBP0;
+      break;
+    case OBP1:
+      data = iOBP1;
+      break;
+    case WY:
+      data = iWY;
+      break;
+    case WX:
+      data = iWX;
+      break;
 
     // Not implemented yet / error
     default:
-      spdlog::warn("IO register ${:04x} has not been implemented yet... ",
-                   addr);
+      // spdlog::warn("IO register ${:04x} has not been implemented yet... ",
+      //              addr);
       break;
   }
   return data;
@@ -93,7 +125,9 @@ void IO::io_write(uint16_t addr, uint8_t data) {
       break;
 
     // Serial data transfer
-    case SB: iSB = data; break;
+    case SB:
+      iSB = data;
+      break;
     case SC:
       iSC = data;
       break;
@@ -104,27 +138,55 @@ void IO::io_write(uint16_t addr, uint8_t data) {
       break;
 
       // Timer
-    case TIMA: iTIMA = data; break;
-    case TMA: iTMA = data; break;
-    case TAC: iTAC = data & 0x07; break;
+    case TIMA:
+      iTIMA = data;
+      break;
+    case TMA:
+      iTMA = data;
+      break;
+    case TAC:
+      iTAC = data & 0x07;
+      break;
 
     // PPU
-    case LCDC: iLCDC = data; break;
-    case STAT: iSTAT = data; break;
-    case SCY: iSCY = data; break;
-    case SCX: iSCX = data; break;
-    case LY: iLY = data; break;
-    case LYC: iLYC = data; break;
-    case BGP: iBGP = data; break;
-    case OBP0: iOBP0 = data; break;
-    case OBP1: iOBP1 = data; break;
-    case WY: iWY = data; break;
-    case WX: iWX = data; break;
+    case LCDC:
+      iLCDC = data;
+      break;
+    case STAT:
+      iSTAT = data;
+      break;
+    case SCY:
+      iSCY = data;
+      break;
+    case SCX:
+      iSCX = data;
+      break;
+    case LY:
+      iLY = data;
+      break;
+    case LYC:
+      iLYC = data;
+      break;
+    case BGP:
+      iBGP = data;
+      break;
+    case OBP0:
+      iOBP0 = data;
+      break;
+    case OBP1:
+      iOBP1 = data;
+      break;
+    case WY:
+      iWY = data;
+      break;
+    case WX:
+      iWX = data;
+      break;
 
     // Not implemented yet / error
     default:
-      spdlog::warn("IO register ${:04x} has not been implemented yet... ",
-                   addr);
+      // spdlog::warn("IO register ${:04x} has not been implemented yet... ",
+      //              addr);
       break;
   }
 }
