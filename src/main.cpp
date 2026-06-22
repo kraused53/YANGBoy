@@ -12,7 +12,7 @@ int main() {
   spdlog::set_level(spdlog::level::info);  // set via config/arg in practice
 
   // std::filesystem::path path = "test_roms/cpu/01-special.gb";
-  // std::filesystem::path path = "test_roms/cpu/02-interrupts.gb";
+  std::filesystem::path path = "test_roms/cpu/02-interrupts.gb";
   //  std::filesystem::path path = "test_roms/cpu/03-op sp,hl.gb";
   //  std::filesystem::path path = "test_roms/cpu/04-op r,imm.gb";
   //  std::filesystem::path path = "test_roms/cpu/05-op rp.gb";
