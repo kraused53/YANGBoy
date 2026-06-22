@@ -9,7 +9,7 @@
 int main() {
   auto logger = spdlog::stdout_color_mt("yangboy");
   spdlog::set_default_logger(logger);
-  spdlog::set_level(spdlog::level::debug);  // set via config/arg in practice
+  spdlog::set_level(spdlog::level::info);  // set via config/arg in practice
 
   // std::filesystem::path path = "test_roms/cpu/01-special.gb";
   std::filesystem::path path = "test_roms/cpu/02-interrupts.gb";

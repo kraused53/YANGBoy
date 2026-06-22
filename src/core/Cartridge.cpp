@@ -112,7 +112,7 @@ size_t Cartridge::get_rom_offset() { return ROM_BANK_SIZE * current_rom_bank; }
 size_t Cartridge::get_ram_offset() { return RAM_BANK_SIZE * current_ram_bank; }
 
 /* Load a cartridge */
-bool Cartridge::load_rom(std::filesystem::path& rom_path) {
+bool Cartridge::load_rom(const std::filesystem::path& rom_path) {
   spdlog::info("Loading ROM file: {}", rom_path.c_str());
 
   // Attempt to open rom at given path

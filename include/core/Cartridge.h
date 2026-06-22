@@ -36,5 +36,5 @@ class Cartridge {
   uint8_t ram_read(uint16_t addr);
   void ram_write(uint16_t addr, uint8_t data);
 
-  bool load_rom(std::filesystem::path& rom_path);
+  bool load_rom(const std::filesystem::path& rom_path);
 };

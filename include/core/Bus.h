@@ -9,10 +9,13 @@
 #include "core/IO.h"
 #include "core/Ram.h"
 #include "core/SM83.h"
+#include "core/Timer.h"
 
 class Bus : public IBus {
  private:
   std::string test_rom_log;
+
+  void dma_transfer(uint8_t data);
 
  public:
   Bus();
@@ -28,6 +31,7 @@ class Bus : public IBus {
   Cartridge cartridge;
   Ram ram;
   IO io;
+  Timer timer;
 
   // Memory access
   void write(uint16_t addr, uint8_t data) override;

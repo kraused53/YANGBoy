@@ -4,10 +4,12 @@
 #include <spdlog/spdlog.h>
 
 #include "Addresses.h"
+#include "IORegisters.h"
 
 Bus::Bus() {
   // Connect CPU to communication bus
   cpu.connect_to_bus(this);
+  timer.connect_to_bus(this);
 
   reset();
 }
@@ -15,8 +17,8 @@ Bus::Bus() {
 Bus::~Bus() {}
 
 void Bus::write(uint16_t addr, uint8_t data) {
-  if (addr == 0xFF02 && data == 0x81) {
-    char c = static_cast<char>(read(0xFF01));
+  if (addr == SC && data == 0x81) {
+    char c = static_cast<char>(read(SB));
     if (c != '\0') {
       test_rom_log += c;
     } else {
@@ -49,7 +51,13 @@ void Bus::write(uint16_t addr, uint8_t data) {
   } else if (is_between(addr, OAM_START, OAM_END)) {
     // handle_bus_error(true, addr, "PPU not implemented!");
   } else if (is_between(addr, IO_START, IO_END)) {
-    io.io_write(addr, data);
+    if (addr == DIV) {
+      timer.clear_div();
+    } else if (addr = DMA) {
+      dma_transfer(data);
+    } else {
+      io.io_write(addr, data);
+    }
   } else if (is_between(addr, HRAM_START, HRAM_END)) {
     ram.hram_write(addr, data);
   } else if (addr == IE) {
@@ -77,7 +85,11 @@ uint8_t Bus::read(uint16_t addr) {
   } else if (is_between(addr, OAM_START, OAM_END)) {
     // handle_bus_error(false, addr, "PPU not implemented!");
   } else if (is_between(addr, IO_START, IO_END)) {
-    data = io.io_read(addr);
+    if (addr != DIV) {
+      data = io.io_read(addr);
+    } else {
+      data = timer.get_div();
+    }
   } else if (is_between(addr, HRAM_START, HRAM_END)) {
     data = ram.hram_read(addr);
   } else if (addr == IE) {
@@ -97,16 +109,14 @@ void Bus::reset() {
   cpu.reset();
   ram.reset();
   cartridge.reset();
+  timer.reset();
   io.reset();
 }
 
 void Bus::clock() {
   int cpu_cycles = cpu.step();
-  io.timer_tick(cpu_cycles);
-  if (io.timer_interrupt) {
-    io.timer_interrupt = false;
-    request_interrupt(TIMER_FLAG);  // bit 2 = timer interrupt
-  }
+
+  timer.tick(cpu_cycles);
 }
 
 void Bus::handle_bus_error(bool write, uint16_t addr, const char* msg) {
@@ -114,8 +124,8 @@ void Bus::handle_bus_error(bool write, uint16_t addr, const char* msg) {
                 write ? "write to" : "read from", addr, msg);
 
   // Stop the CPU and indicate an error
-  cpu.error = true;
-  cpu.halted = true;
+  // cpu.error = true;
+  // cpu.halted = true;
 }
 
 bool Bus::is_between(uint16_t addr, uint16_t range_start, uint16_t range_end) {
@@ -142,5 +152,13 @@ void Bus::request_interrupt(uint8_t interrupt_flag) {
     case JOYPAD_FLAG: spdlog::debug("JOYPAD interrupt requested"); break;
 
     default: spdlog::warn("Unknown interrupt requested..."); break;
+  }
+}
+
+void Bus::dma_transfer(uint8_t data) {
+  uint16_t addr = data << 8;
+  spdlog::info("dma transfer ${:02X} -> ${:04X}", data, addr);
+  for (uint8_t i = 0; i < 0xA0; i++) {
+    write(0xFE00 + i, read(addr + i));
   }
 }
