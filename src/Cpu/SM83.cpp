@@ -1,15 +1,11 @@
-#include "core/SM83.h"
-
-#include <spdlog/sinks/stdout_color_sinks.h>
-#include <spdlog/spdlog.h>
+#include "SM83.h"
 
 #include <iostream>
 
-#include "core/Bus.h"
+#include "Bus/Bus.h"
 
 /* Constructors */
 SM83::SM83(void) {
-  spdlog::info("Initializing CPU...");
   reset();
 
   // Alias class name to make lines shorter
@@ -608,16 +604,6 @@ void SM83::write_word(uint16_t addr, uint16_t data) {
 
 /* Flags */
 void SM83::set_flag(FLAG f, bool val) {
-  switch (f) {
-    case F_Z: spdlog::trace("Zero flag {}", val ? "set" : "cleared"); break;
-    case F_N: spdlog::trace("Sign flag {}", val ? "set" : "cleared"); break;
-    case F_H:
-      spdlog::trace("Half-Carry flag {}", val ? "set" : "cleared");
-      break;
-    case F_C: spdlog::trace("Carry flag {}", val ? "set" : "cleared"); break;
-    default: spdlog::trace("Unknown flag {}", val ? "set" : "cleared"); break;
-  }
-
   if (val) {
     regs.f |= f;
   } else {
@@ -650,16 +636,36 @@ bool SM83::parse_conditional(COND cond) {
   bool ret = false;
 
   switch (cond) {
-    case CN_NONE: ret = true; break;
-    case CN_Z: ret = get_flag(F_Z); break;
-    case CN_NZ: ret = !get_flag(F_Z); break;
-    case CN_H: ret = get_flag(F_H); break;
-    case CN_NH: ret = !get_flag(F_H); break;
-    case CN_N: ret = get_flag(F_N); break;
-    case CN_NN: ret = !get_flag(F_N); break;
-    case CN_C: ret = get_flag(F_C); break;
-    case CN_NC: ret = !get_flag(F_C); break;
-    default: UNI(); break;
+    case CN_NONE:
+      ret = true;
+      break;
+    case CN_Z:
+      ret = get_flag(F_Z);
+      break;
+    case CN_NZ:
+      ret = !get_flag(F_Z);
+      break;
+    case CN_H:
+      ret = get_flag(F_H);
+      break;
+    case CN_NH:
+      ret = !get_flag(F_H);
+      break;
+    case CN_N:
+      ret = get_flag(F_N);
+      break;
+    case CN_NN:
+      ret = !get_flag(F_N);
+      break;
+    case CN_C:
+      ret = get_flag(F_C);
+      break;
+    case CN_NC:
+      ret = !get_flag(F_C);
+      break;
+    default:
+      UNI();
+      break;
   }
 
   return ret;
@@ -706,23 +712,13 @@ int SM83::step(void) {
   if (!halted) {
     // Fetch next opcode
     opcode = fetch_byte();
-    spdlog::debug(
-        "Fetch opcode] ${:04X} -> {:02X} Memory: [ {:02X} {:02X} {:02X} ]",
-        regs.pc - 1, opcode, read_byte(regs.pc - 1), read_byte(regs.pc),
-        read_byte(regs.pc + 1));
 
     if (error) {
-      spdlog::error("There was an error fetching the opcode!, exiting...");
       return 1;
     }
 
     // Execute opcode
     (this->*opcodes[opcode].operate)();
-    spdlog::debug(
-        "   CPU State] A:{:02X} F:{:02X} | B:{:02X} C:{:02X} | D:{:02X} "
-        "E:{:02X} | H:{:02X} L:{:02X} | SP:{:04X} | PC:{:04X} | CYC:{} {}{}",
-        regs.a, regs.f, regs.b, regs.c, regs.d, regs.e, regs.h, regs.l, regs.sp,
-        regs.pc, cycles, error ? "[ERR] " : "", halted ? "[HLT]" : "");
   } else {
     cycles += 4;
   }
@@ -730,8 +726,6 @@ int SM83::step(void) {
 }
 
 void SM83::reset(void) {
-  spdlog::info("CPU Reset...");
-
   regs.a = 0x01;
   regs.f = 0xB0;
   regs.b = 0x00;
@@ -803,8 +797,6 @@ void SM83::DBG(void) {
 
 /* Opcodes */
 void SM83::UNI(void) {
-  spdlog::error("The CPU has encountered an error executing opcode: {:02X}",
-                opcode);
   halted = true;
   error = true;
   cycles = 1;
@@ -820,11 +812,21 @@ void SM83::LD_RP_IMM(void) {
   cycles = 12;
 
   switch (GET_DST) {
-    case RP_BC: regs.bc = data; break;
-    case RP_DE: regs.de = data; break;
-    case RP_HL: regs.hl = data; break;
-    case RP_SP: regs.sp = data; break;
-    default: UNI(); break;
+    case RP_BC:
+      regs.bc = data;
+      break;
+    case RP_DE:
+      regs.de = data;
+      break;
+    case RP_HL:
+      regs.hl = data;
+      break;
+    case RP_SP:
+      regs.sp = data;
+      break;
+    default:
+      UNI();
+      break;
   }
 }
 
@@ -832,10 +834,18 @@ void SM83::LD_mRP_A(void) {
   cycles = 12;
 
   switch (GET_DST) {
-    case RP_BC: write_byte(regs.bc, regs.a); break;
-    case RP_DE: write_byte(regs.de, regs.a); break;
-    case RP_HL: write_byte(regs.hl, regs.a); break;
-    default: UNI(); break;
+    case RP_BC:
+      write_byte(regs.bc, regs.a);
+      break;
+    case RP_DE:
+      write_byte(regs.de, regs.a);
+      break;
+    case RP_HL:
+      write_byte(regs.hl, regs.a);
+      break;
+    default:
+      UNI();
+      break;
   }
 
   if (opcode == 0x22) {
@@ -849,11 +859,21 @@ void SM83::INC_RP(void) {
   cycles = 8;
 
   switch (GET_DST) {
-    case RP_BC: regs.bc++; break;
-    case RP_DE: regs.de++; break;
-    case RP_HL: regs.hl++; break;
-    case RP_SP: regs.sp++; break;
-    default: UNI(); break;
+    case RP_BC:
+      regs.bc++;
+      break;
+    case RP_DE:
+      regs.de++;
+      break;
+    case RP_HL:
+      regs.hl++;
+      break;
+    case RP_SP:
+      regs.sp++;
+      break;
+    default:
+      UNI();
+      break;
   }
 }
 
@@ -894,7 +914,9 @@ void SM83::INC_RG(void) {
         result = regs.a + 1;
         regs.a = result;
         break;
-      default: UNI(); return;
+      default:
+        UNI();
+        return;
     }
 
     cycles = 4;
@@ -943,7 +965,9 @@ void SM83::DEC_RG(void) {
         result = regs.a - 1;
         regs.a = result;
         break;
-      default: UNI(); return;
+      default:
+        UNI();
+        return;
     }
 
     cycles = 4;
@@ -963,14 +987,30 @@ void SM83::LD_RG_IMM(void) {
     cycles = 12;
   } else {
     switch (GET_DST) {
-      case RG_B: regs.b = data; break;
-      case RG_C: regs.c = data; break;
-      case RG_D: regs.d = data; break;
-      case RG_E: regs.e = data; break;
-      case RG_H: regs.h = data; break;
-      case RG_L: regs.l = data; break;
-      case RG_A: regs.a = data; break;
-      default: UNI(); return;
+      case RG_B:
+        regs.b = data;
+        break;
+      case RG_C:
+        regs.c = data;
+        break;
+      case RG_D:
+        regs.d = data;
+        break;
+      case RG_E:
+        regs.e = data;
+        break;
+      case RG_H:
+        regs.h = data;
+        break;
+      case RG_L:
+        regs.l = data;
+        break;
+      case RG_A:
+        regs.a = data;
+        break;
+      default:
+        UNI();
+        return;
     }
     cycles = 8;
   }
@@ -1002,11 +1042,21 @@ void SM83::ADD_HL_RP(void) {
   uint16_t src = 0;
 
   switch (GET_SRC) {
-    case RP_BC: src = regs.bc; break;
-    case RP_DE: src = regs.de; break;
-    case RP_HL: src = regs.hl; break;
-    case RP_SP: src = regs.sp; break;
-    default: UNI(); return;
+    case RP_BC:
+      src = regs.bc;
+      break;
+    case RP_DE:
+      src = regs.de;
+      break;
+    case RP_HL:
+      src = regs.hl;
+      break;
+    case RP_SP:
+      src = regs.sp;
+      break;
+    default:
+      UNI();
+      return;
   }
 
   uint32_t result = src + regs.hl;
@@ -1021,10 +1071,18 @@ void SM83::ADD_HL_RP(void) {
 
 void SM83::LD_A_mRP(void) {
   switch (GET_SRC) {
-    case RP_BC: regs.a = read_byte(regs.bc); break;
-    case RP_DE: regs.a = read_byte(regs.de); break;
-    case RP_HL: regs.a = read_byte(regs.hl); break;
-    default: UNI(); return;
+    case RP_BC:
+      regs.a = read_byte(regs.bc);
+      break;
+    case RP_DE:
+      regs.a = read_byte(regs.de);
+      break;
+    case RP_HL:
+      regs.a = read_byte(regs.hl);
+      break;
+    default:
+      UNI();
+      return;
   }
 
   if (opcode == 0x2A) {
@@ -1038,11 +1096,21 @@ void SM83::LD_A_mRP(void) {
 
 void SM83::DEC_RP(void) {
   switch (GET_DST) {
-    case RP_BC: regs.bc = regs.bc - 1; break;
-    case RP_DE: regs.de = regs.de - 1; break;
-    case RP_HL: regs.hl = regs.hl - 1; break;
-    case RP_SP: regs.sp = regs.sp - 1; break;
-    default: UNI(); return;
+    case RP_BC:
+      regs.bc = regs.bc - 1;
+      break;
+    case RP_DE:
+      regs.de = regs.de - 1;
+      break;
+    case RP_HL:
+      regs.hl = regs.hl - 1;
+      break;
+    case RP_SP:
+      regs.sp = regs.sp - 1;
+      break;
+    default:
+      UNI();
+      return;
   }
 
   cycles = 8;
@@ -1177,25 +1245,57 @@ void SM83::MOV_RG_RG(void) {
   cycles = 4;
 
   switch (GET_SRC) {
-    case RG_B: data = regs.b; break;
-    case RG_C: data = regs.c; break;
-    case RG_D: data = regs.d; break;
-    case RG_E: data = regs.e; break;
-    case RG_H: data = regs.h; break;
-    case RG_L: data = regs.l; break;
-    case RG_A: data = regs.a; break;
-    default: UNI(); return;
+    case RG_B:
+      data = regs.b;
+      break;
+    case RG_C:
+      data = regs.c;
+      break;
+    case RG_D:
+      data = regs.d;
+      break;
+    case RG_E:
+      data = regs.e;
+      break;
+    case RG_H:
+      data = regs.h;
+      break;
+    case RG_L:
+      data = regs.l;
+      break;
+    case RG_A:
+      data = regs.a;
+      break;
+    default:
+      UNI();
+      return;
   }
 
   switch (GET_DST) {
-    case RG_B: regs.b = data; break;
-    case RG_C: regs.c = data; break;
-    case RG_D: regs.d = data; break;
-    case RG_E: regs.e = data; break;
-    case RG_H: regs.h = data; break;
-    case RG_L: regs.l = data; break;
-    case RG_A: regs.a = data; break;
-    default: UNI(); return;
+    case RG_B:
+      regs.b = data;
+      break;
+    case RG_C:
+      regs.c = data;
+      break;
+    case RG_D:
+      regs.d = data;
+      break;
+    case RG_E:
+      regs.e = data;
+      break;
+    case RG_H:
+      regs.h = data;
+      break;
+    case RG_L:
+      regs.l = data;
+      break;
+    case RG_A:
+      regs.a = data;
+      break;
+    default:
+      UNI();
+      return;
   }
 }
 
@@ -1210,14 +1310,30 @@ void SM83::MOV_RG_mRP(void) {
   uint8_t data = read_byte(regs.hl);
 
   switch (GET_DST) {
-    case RG_B: regs.b = data; break;
-    case RG_C: regs.c = data; break;
-    case RG_D: regs.d = data; break;
-    case RG_E: regs.e = data; break;
-    case RG_H: regs.h = data; break;
-    case RG_L: regs.l = data; break;
-    case RG_A: regs.a = data; break;
-    default: UNI(); return;
+    case RG_B:
+      regs.b = data;
+      break;
+    case RG_C:
+      regs.c = data;
+      break;
+    case RG_D:
+      regs.d = data;
+      break;
+    case RG_E:
+      regs.e = data;
+      break;
+    case RG_H:
+      regs.h = data;
+      break;
+    case RG_L:
+      regs.l = data;
+      break;
+    case RG_A:
+      regs.a = data;
+      break;
+    default:
+      UNI();
+      return;
   }
 
   cycles = 8;
@@ -1233,14 +1349,30 @@ void SM83::MOV_mRP_RG(void) {
 
   uint8_t data = 0;
   switch (GET_SRC) {
-    case RG_B: data = regs.b; break;
-    case RG_C: data = regs.c; break;
-    case RG_D: data = regs.d; break;
-    case RG_E: data = regs.e; break;
-    case RG_H: data = regs.h; break;
-    case RG_L: data = regs.l; break;
-    case RG_A: data = regs.a; break;
-    default: UNI(); return;
+    case RG_B:
+      data = regs.b;
+      break;
+    case RG_C:
+      data = regs.c;
+      break;
+    case RG_D:
+      data = regs.d;
+      break;
+    case RG_E:
+      data = regs.e;
+      break;
+    case RG_H:
+      data = regs.h;
+      break;
+    case RG_L:
+      data = regs.l;
+      break;
+    case RG_A:
+      data = regs.a;
+      break;
+    default:
+      UNI();
+      return;
   }
 
   write_byte(regs.hl, data);
@@ -1267,14 +1399,30 @@ void SM83::ADD(void) {
     cycles = 8;
   } else {
     switch (GET_SRC) {
-      case RG_B: to_op = regs.b; break;
-      case RG_C: to_op = regs.c; break;
-      case RG_D: to_op = regs.d; break;
-      case RG_E: to_op = regs.e; break;
-      case RG_H: to_op = regs.h; break;
-      case RG_L: to_op = regs.l; break;
-      case RG_A: to_op = regs.a; break;
-      default: UNI(); return;
+      case RG_B:
+        to_op = regs.b;
+        break;
+      case RG_C:
+        to_op = regs.c;
+        break;
+      case RG_D:
+        to_op = regs.d;
+        break;
+      case RG_E:
+        to_op = regs.e;
+        break;
+      case RG_H:
+        to_op = regs.h;
+        break;
+      case RG_L:
+        to_op = regs.l;
+        break;
+      case RG_A:
+        to_op = regs.a;
+        break;
+      default:
+        UNI();
+        return;
     }
     cycles = 4;
   }
@@ -1294,14 +1442,30 @@ void SM83::ADC(void) {
     cycles = 8;
   } else {
     switch (GET_SRC) {
-      case RG_B: to_op = regs.b; break;
-      case RG_C: to_op = regs.c; break;
-      case RG_D: to_op = regs.d; break;
-      case RG_E: to_op = regs.e; break;
-      case RG_H: to_op = regs.h; break;
-      case RG_L: to_op = regs.l; break;
-      case RG_A: to_op = regs.a; break;
-      default: UNI(); return;
+      case RG_B:
+        to_op = regs.b;
+        break;
+      case RG_C:
+        to_op = regs.c;
+        break;
+      case RG_D:
+        to_op = regs.d;
+        break;
+      case RG_E:
+        to_op = regs.e;
+        break;
+      case RG_H:
+        to_op = regs.h;
+        break;
+      case RG_L:
+        to_op = regs.l;
+        break;
+      case RG_A:
+        to_op = regs.a;
+        break;
+      default:
+        UNI();
+        return;
     }
     cycles = 4;
   }
@@ -1321,14 +1485,30 @@ void SM83::SUB(void) {
     cycles = 8;
   } else {
     switch (GET_SRC) {
-      case RG_B: to_op = regs.b; break;
-      case RG_C: to_op = regs.c; break;
-      case RG_D: to_op = regs.d; break;
-      case RG_E: to_op = regs.e; break;
-      case RG_H: to_op = regs.h; break;
-      case RG_L: to_op = regs.l; break;
-      case RG_A: to_op = regs.a; break;
-      default: UNI(); return;
+      case RG_B:
+        to_op = regs.b;
+        break;
+      case RG_C:
+        to_op = regs.c;
+        break;
+      case RG_D:
+        to_op = regs.d;
+        break;
+      case RG_E:
+        to_op = regs.e;
+        break;
+      case RG_H:
+        to_op = regs.h;
+        break;
+      case RG_L:
+        to_op = regs.l;
+        break;
+      case RG_A:
+        to_op = regs.a;
+        break;
+      default:
+        UNI();
+        return;
     }
     cycles = 4;
   }
@@ -1350,14 +1530,30 @@ void SM83::SBC(void) {
     cycles = 8;
   } else {
     switch (GET_SRC) {
-      case RG_B: to_op = regs.b; break;
-      case RG_C: to_op = regs.c; break;
-      case RG_D: to_op = regs.d; break;
-      case RG_E: to_op = regs.e; break;
-      case RG_H: to_op = regs.h; break;
-      case RG_L: to_op = regs.l; break;
-      case RG_A: to_op = regs.a; break;
-      default: UNI(); return;
+      case RG_B:
+        to_op = regs.b;
+        break;
+      case RG_C:
+        to_op = regs.c;
+        break;
+      case RG_D:
+        to_op = regs.d;
+        break;
+      case RG_E:
+        to_op = regs.e;
+        break;
+      case RG_H:
+        to_op = regs.h;
+        break;
+      case RG_L:
+        to_op = regs.l;
+        break;
+      case RG_A:
+        to_op = regs.a;
+        break;
+      default:
+        UNI();
+        return;
     }
     cycles = 4;
   }
@@ -1379,14 +1575,30 @@ void SM83::AND(void) {
     cycles = 8;
   } else {
     switch (GET_SRC) {
-      case RG_B: to_op = regs.b; break;
-      case RG_C: to_op = regs.c; break;
-      case RG_D: to_op = regs.d; break;
-      case RG_E: to_op = regs.e; break;
-      case RG_H: to_op = regs.h; break;
-      case RG_L: to_op = regs.l; break;
-      case RG_A: to_op = regs.a; break;
-      default: UNI(); return;
+      case RG_B:
+        to_op = regs.b;
+        break;
+      case RG_C:
+        to_op = regs.c;
+        break;
+      case RG_D:
+        to_op = regs.d;
+        break;
+      case RG_E:
+        to_op = regs.e;
+        break;
+      case RG_H:
+        to_op = regs.h;
+        break;
+      case RG_L:
+        to_op = regs.l;
+        break;
+      case RG_A:
+        to_op = regs.a;
+        break;
+      default:
+        UNI();
+        return;
     }
     cycles = 4;
   }
@@ -1410,14 +1622,30 @@ void SM83::XOR(void) {
     cycles = 8;
   } else {
     switch (GET_SRC) {
-      case RG_B: to_op = regs.b; break;
-      case RG_C: to_op = regs.c; break;
-      case RG_D: to_op = regs.d; break;
-      case RG_E: to_op = regs.e; break;
-      case RG_H: to_op = regs.h; break;
-      case RG_L: to_op = regs.l; break;
-      case RG_A: to_op = regs.a; break;
-      default: UNI(); return;
+      case RG_B:
+        to_op = regs.b;
+        break;
+      case RG_C:
+        to_op = regs.c;
+        break;
+      case RG_D:
+        to_op = regs.d;
+        break;
+      case RG_E:
+        to_op = regs.e;
+        break;
+      case RG_H:
+        to_op = regs.h;
+        break;
+      case RG_L:
+        to_op = regs.l;
+        break;
+      case RG_A:
+        to_op = regs.a;
+        break;
+      default:
+        UNI();
+        return;
     }
     cycles = 4;
   }
@@ -1441,14 +1669,30 @@ void SM83::OR(void) {
     cycles = 8;
   } else {
     switch (GET_SRC) {
-      case RG_B: to_op = regs.b; break;
-      case RG_C: to_op = regs.c; break;
-      case RG_D: to_op = regs.d; break;
-      case RG_E: to_op = regs.e; break;
-      case RG_H: to_op = regs.h; break;
-      case RG_L: to_op = regs.l; break;
-      case RG_A: to_op = regs.a; break;
-      default: UNI(); return;
+      case RG_B:
+        to_op = regs.b;
+        break;
+      case RG_C:
+        to_op = regs.c;
+        break;
+      case RG_D:
+        to_op = regs.d;
+        break;
+      case RG_E:
+        to_op = regs.e;
+        break;
+      case RG_H:
+        to_op = regs.h;
+        break;
+      case RG_L:
+        to_op = regs.l;
+        break;
+      case RG_A:
+        to_op = regs.a;
+        break;
+      default:
+        UNI();
+        return;
     }
     cycles = 4;
   }
@@ -1472,14 +1716,30 @@ void SM83::CP(void) {
     cycles = 8;
   } else {
     switch (GET_SRC) {
-      case RG_B: to_op = regs.b; break;
-      case RG_C: to_op = regs.c; break;
-      case RG_D: to_op = regs.d; break;
-      case RG_E: to_op = regs.e; break;
-      case RG_H: to_op = regs.h; break;
-      case RG_L: to_op = regs.l; break;
-      case RG_A: to_op = regs.a; break;
-      default: UNI(); return;
+      case RG_B:
+        to_op = regs.b;
+        break;
+      case RG_C:
+        to_op = regs.c;
+        break;
+      case RG_D:
+        to_op = regs.d;
+        break;
+      case RG_E:
+        to_op = regs.e;
+        break;
+      case RG_H:
+        to_op = regs.h;
+        break;
+      case RG_L:
+        to_op = regs.l;
+        break;
+      case RG_A:
+        to_op = regs.a;
+        break;
+      default:
+        UNI();
+        return;
     }
     cycles = 4;
   }
@@ -1505,14 +1765,22 @@ void SM83::POP(void) {
   uint16_t data = pop_from_stack();
 
   switch (GET_DST) {
-    case RP_BC: regs.bc = data; break;
-    case RP_DE: regs.de = data; break;
-    case RP_HL: regs.hl = data; break;
+    case RP_BC:
+      regs.bc = data;
+      break;
+    case RP_DE:
+      regs.de = data;
+      break;
+    case RP_HL:
+      regs.hl = data;
+      break;
     case RP_AF:
       regs.af = data;
       regs.f &= 0xF0;
       break;
-    default: UNI(); return;
+    default:
+      UNI();
+      return;
   }
 
   cycles = 12;
@@ -1549,11 +1817,21 @@ void SM83::CALL(void) {
 void SM83::PUSH(void) {
   uint16_t data = 0;
   switch (GET_SRC) {
-    case RP_BC: data = regs.bc; break;
-    case RP_DE: data = regs.de; break;
-    case RP_HL: data = regs.hl; break;
-    case RP_AF: data = regs.af; break;
-    default: UNI(); return;
+    case RP_BC:
+      data = regs.bc;
+      break;
+    case RP_DE:
+      data = regs.de;
+      break;
+    case RP_HL:
+      data = regs.hl;
+      break;
+    case RP_AF:
+      data = regs.af;
+      break;
+    default:
+      UNI();
+      return;
   }
 
   push_to_stack(data);
@@ -1566,15 +1844,33 @@ void SM83::RST(void) {
   cycles = 16;
 
   switch (opcode) {
-    case 0xC7: regs.pc = 0x0000; break;
-    case 0xCF: regs.pc = 0x0008; break;
-    case 0xD7: regs.pc = 0x0010; break;
-    case 0xDF: regs.pc = 0x0018; break;
-    case 0xE7: regs.pc = 0x0020; break;
-    case 0xEF: regs.pc = 0x0028; break;
-    case 0xF7: regs.pc = 0x0030; break;
-    case 0xFF: regs.pc = 0x0038; break;
-    default: UNI(); break;
+    case 0xC7:
+      regs.pc = 0x0000;
+      break;
+    case 0xCF:
+      regs.pc = 0x0008;
+      break;
+    case 0xD7:
+      regs.pc = 0x0010;
+      break;
+    case 0xDF:
+      regs.pc = 0x0018;
+      break;
+    case 0xE7:
+      regs.pc = 0x0020;
+      break;
+    case 0xEF:
+      regs.pc = 0x0028;
+      break;
+    case 0xF7:
+      regs.pc = 0x0030;
+      break;
+    case 0xFF:
+      regs.pc = 0x0038;
+      break;
+    default:
+      UNI();
+      break;
   }
 }
 
@@ -1606,7 +1902,9 @@ void SM83::LDH(void) {
       regs.a = read_byte((0xFF00 + regs.c));
       cycles = 16;
       break;
-    default: UNI(); break;
+    default:
+      UNI();
+      break;
   }
 }
 
@@ -1662,14 +1960,30 @@ void SM83::RLC(void) {
   } else {
     cycles = 8;
     switch (CB_GET_DST) {
-      case RG_B: to_op = regs.b; break;
-      case RG_C: to_op = regs.c; break;
-      case RG_D: to_op = regs.d; break;
-      case RG_E: to_op = regs.e; break;
-      case RG_H: to_op = regs.h; break;
-      case RG_L: to_op = regs.l; break;
-      case RG_A: to_op = regs.a; break;
-      default: UNI(); return;
+      case RG_B:
+        to_op = regs.b;
+        break;
+      case RG_C:
+        to_op = regs.c;
+        break;
+      case RG_D:
+        to_op = regs.d;
+        break;
+      case RG_E:
+        to_op = regs.e;
+        break;
+      case RG_H:
+        to_op = regs.h;
+        break;
+      case RG_L:
+        to_op = regs.l;
+        break;
+      case RG_A:
+        to_op = regs.a;
+        break;
+      default:
+        UNI();
+        return;
     }
   }
 
@@ -1688,14 +2002,30 @@ void SM83::RLC(void) {
     write_byte(regs.hl, to_op);
   } else {
     switch (CB_GET_DST) {
-      case RG_B: regs.b = to_op; break;
-      case RG_C: regs.c = to_op; break;
-      case RG_D: regs.d = to_op; break;
-      case RG_E: regs.e = to_op; break;
-      case RG_H: regs.h = to_op; break;
-      case RG_L: regs.l = to_op; break;
-      case RG_A: regs.a = to_op; break;
-      default: UNI(); return;
+      case RG_B:
+        regs.b = to_op;
+        break;
+      case RG_C:
+        regs.c = to_op;
+        break;
+      case RG_D:
+        regs.d = to_op;
+        break;
+      case RG_E:
+        regs.e = to_op;
+        break;
+      case RG_H:
+        regs.h = to_op;
+        break;
+      case RG_L:
+        regs.l = to_op;
+        break;
+      case RG_A:
+        regs.a = to_op;
+        break;
+      default:
+        UNI();
+        return;
     }
   }
 }
@@ -1708,14 +2038,30 @@ void SM83::RRC(void) {
   } else {
     cycles = 8;
     switch (CB_GET_DST) {
-      case RG_B: to_op = regs.b; break;
-      case RG_C: to_op = regs.c; break;
-      case RG_D: to_op = regs.d; break;
-      case RG_E: to_op = regs.e; break;
-      case RG_H: to_op = regs.h; break;
-      case RG_L: to_op = regs.l; break;
-      case RG_A: to_op = regs.a; break;
-      default: UNI(); return;
+      case RG_B:
+        to_op = regs.b;
+        break;
+      case RG_C:
+        to_op = regs.c;
+        break;
+      case RG_D:
+        to_op = regs.d;
+        break;
+      case RG_E:
+        to_op = regs.e;
+        break;
+      case RG_H:
+        to_op = regs.h;
+        break;
+      case RG_L:
+        to_op = regs.l;
+        break;
+      case RG_A:
+        to_op = regs.a;
+        break;
+      default:
+        UNI();
+        return;
     }
   }
 
@@ -1734,14 +2080,30 @@ void SM83::RRC(void) {
     write_byte(regs.hl, to_op);
   } else {
     switch (CB_GET_DST) {
-      case RG_B: regs.b = to_op; break;
-      case RG_C: regs.c = to_op; break;
-      case RG_D: regs.d = to_op; break;
-      case RG_E: regs.e = to_op; break;
-      case RG_H: regs.h = to_op; break;
-      case RG_L: regs.l = to_op; break;
-      case RG_A: regs.a = to_op; break;
-      default: UNI(); return;
+      case RG_B:
+        regs.b = to_op;
+        break;
+      case RG_C:
+        regs.c = to_op;
+        break;
+      case RG_D:
+        regs.d = to_op;
+        break;
+      case RG_E:
+        regs.e = to_op;
+        break;
+      case RG_H:
+        regs.h = to_op;
+        break;
+      case RG_L:
+        regs.l = to_op;
+        break;
+      case RG_A:
+        regs.a = to_op;
+        break;
+      default:
+        UNI();
+        return;
     }
   }
 }
@@ -1756,14 +2118,30 @@ void SM83::RL(void) {
   } else {
     cycles = 8;
     switch (CB_GET_DST) {
-      case RG_B: to_op = regs.b; break;
-      case RG_C: to_op = regs.c; break;
-      case RG_D: to_op = regs.d; break;
-      case RG_E: to_op = regs.e; break;
-      case RG_H: to_op = regs.h; break;
-      case RG_L: to_op = regs.l; break;
-      case RG_A: to_op = regs.a; break;
-      default: UNI(); return;
+      case RG_B:
+        to_op = regs.b;
+        break;
+      case RG_C:
+        to_op = regs.c;
+        break;
+      case RG_D:
+        to_op = regs.d;
+        break;
+      case RG_E:
+        to_op = regs.e;
+        break;
+      case RG_H:
+        to_op = regs.h;
+        break;
+      case RG_L:
+        to_op = regs.l;
+        break;
+      case RG_A:
+        to_op = regs.a;
+        break;
+      default:
+        UNI();
+        return;
     }
   }
 
@@ -1782,14 +2160,30 @@ void SM83::RL(void) {
     write_byte(regs.hl, to_op);
   } else {
     switch (CB_GET_DST) {
-      case RG_B: regs.b = to_op; break;
-      case RG_C: regs.c = to_op; break;
-      case RG_D: regs.d = to_op; break;
-      case RG_E: regs.e = to_op; break;
-      case RG_H: regs.h = to_op; break;
-      case RG_L: regs.l = to_op; break;
-      case RG_A: regs.a = to_op; break;
-      default: UNI(); return;
+      case RG_B:
+        regs.b = to_op;
+        break;
+      case RG_C:
+        regs.c = to_op;
+        break;
+      case RG_D:
+        regs.d = to_op;
+        break;
+      case RG_E:
+        regs.e = to_op;
+        break;
+      case RG_H:
+        regs.h = to_op;
+        break;
+      case RG_L:
+        regs.l = to_op;
+        break;
+      case RG_A:
+        regs.a = to_op;
+        break;
+      default:
+        UNI();
+        return;
     }
   }
 }
@@ -1804,14 +2198,30 @@ void SM83::RR(void) {
   } else {
     cycles = 8;
     switch (CB_GET_DST) {
-      case RG_B: to_op = regs.b; break;
-      case RG_C: to_op = regs.c; break;
-      case RG_D: to_op = regs.d; break;
-      case RG_E: to_op = regs.e; break;
-      case RG_H: to_op = regs.h; break;
-      case RG_L: to_op = regs.l; break;
-      case RG_A: to_op = regs.a; break;
-      default: UNI(); return;
+      case RG_B:
+        to_op = regs.b;
+        break;
+      case RG_C:
+        to_op = regs.c;
+        break;
+      case RG_D:
+        to_op = regs.d;
+        break;
+      case RG_E:
+        to_op = regs.e;
+        break;
+      case RG_H:
+        to_op = regs.h;
+        break;
+      case RG_L:
+        to_op = regs.l;
+        break;
+      case RG_A:
+        to_op = regs.a;
+        break;
+      default:
+        UNI();
+        return;
     }
   }
 
@@ -1830,14 +2240,30 @@ void SM83::RR(void) {
     write_byte(regs.hl, to_op);
   } else {
     switch (CB_GET_DST) {
-      case RG_B: regs.b = to_op; break;
-      case RG_C: regs.c = to_op; break;
-      case RG_D: regs.d = to_op; break;
-      case RG_E: regs.e = to_op; break;
-      case RG_H: regs.h = to_op; break;
-      case RG_L: regs.l = to_op; break;
-      case RG_A: regs.a = to_op; break;
-      default: UNI(); return;
+      case RG_B:
+        regs.b = to_op;
+        break;
+      case RG_C:
+        regs.c = to_op;
+        break;
+      case RG_D:
+        regs.d = to_op;
+        break;
+      case RG_E:
+        regs.e = to_op;
+        break;
+      case RG_H:
+        regs.h = to_op;
+        break;
+      case RG_L:
+        regs.l = to_op;
+        break;
+      case RG_A:
+        regs.a = to_op;
+        break;
+      default:
+        UNI();
+        return;
     }
   }
 }
@@ -1850,14 +2276,30 @@ void SM83::SLA(void) {
   } else {
     cycles = 8;
     switch (CB_GET_DST) {
-      case RG_B: to_op = regs.b; break;
-      case RG_C: to_op = regs.c; break;
-      case RG_D: to_op = regs.d; break;
-      case RG_E: to_op = regs.e; break;
-      case RG_H: to_op = regs.h; break;
-      case RG_L: to_op = regs.l; break;
-      case RG_A: to_op = regs.a; break;
-      default: UNI(); return;
+      case RG_B:
+        to_op = regs.b;
+        break;
+      case RG_C:
+        to_op = regs.c;
+        break;
+      case RG_D:
+        to_op = regs.d;
+        break;
+      case RG_E:
+        to_op = regs.e;
+        break;
+      case RG_H:
+        to_op = regs.h;
+        break;
+      case RG_L:
+        to_op = regs.l;
+        break;
+      case RG_A:
+        to_op = regs.a;
+        break;
+      default:
+        UNI();
+        return;
     }
   }
 
@@ -1872,14 +2314,30 @@ void SM83::SLA(void) {
     write_byte(regs.hl, to_op);
   } else {
     switch (CB_GET_DST) {
-      case RG_B: regs.b = to_op; break;
-      case RG_C: regs.c = to_op; break;
-      case RG_D: regs.d = to_op; break;
-      case RG_E: regs.e = to_op; break;
-      case RG_H: regs.h = to_op; break;
-      case RG_L: regs.l = to_op; break;
-      case RG_A: regs.a = to_op; break;
-      default: UNI(); return;
+      case RG_B:
+        regs.b = to_op;
+        break;
+      case RG_C:
+        regs.c = to_op;
+        break;
+      case RG_D:
+        regs.d = to_op;
+        break;
+      case RG_E:
+        regs.e = to_op;
+        break;
+      case RG_H:
+        regs.h = to_op;
+        break;
+      case RG_L:
+        regs.l = to_op;
+        break;
+      case RG_A:
+        regs.a = to_op;
+        break;
+      default:
+        UNI();
+        return;
     }
   }
 }
@@ -1892,14 +2350,30 @@ void SM83::SRA(void) {
   } else {
     cycles = 8;
     switch (CB_GET_DST) {
-      case RG_B: to_op = regs.b; break;
-      case RG_C: to_op = regs.c; break;
-      case RG_D: to_op = regs.d; break;
-      case RG_E: to_op = regs.e; break;
-      case RG_H: to_op = regs.h; break;
-      case RG_L: to_op = regs.l; break;
-      case RG_A: to_op = regs.a; break;
-      default: UNI(); return;
+      case RG_B:
+        to_op = regs.b;
+        break;
+      case RG_C:
+        to_op = regs.c;
+        break;
+      case RG_D:
+        to_op = regs.d;
+        break;
+      case RG_E:
+        to_op = regs.e;
+        break;
+      case RG_H:
+        to_op = regs.h;
+        break;
+      case RG_L:
+        to_op = regs.l;
+        break;
+      case RG_A:
+        to_op = regs.a;
+        break;
+      default:
+        UNI();
+        return;
     }
   }
 
@@ -1920,14 +2394,30 @@ void SM83::SRA(void) {
     write_byte(regs.hl, to_op);
   } else {
     switch (CB_GET_DST) {
-      case RG_B: regs.b = to_op; break;
-      case RG_C: regs.c = to_op; break;
-      case RG_D: regs.d = to_op; break;
-      case RG_E: regs.e = to_op; break;
-      case RG_H: regs.h = to_op; break;
-      case RG_L: regs.l = to_op; break;
-      case RG_A: regs.a = to_op; break;
-      default: UNI(); return;
+      case RG_B:
+        regs.b = to_op;
+        break;
+      case RG_C:
+        regs.c = to_op;
+        break;
+      case RG_D:
+        regs.d = to_op;
+        break;
+      case RG_E:
+        regs.e = to_op;
+        break;
+      case RG_H:
+        regs.h = to_op;
+        break;
+      case RG_L:
+        regs.l = to_op;
+        break;
+      case RG_A:
+        regs.a = to_op;
+        break;
+      default:
+        UNI();
+        return;
     }
   }
 }
@@ -1940,14 +2430,30 @@ void SM83::SWAP(void) {
   } else {
     cycles = 8;
     switch (CB_GET_DST) {
-      case RG_B: to_op = regs.b; break;
-      case RG_C: to_op = regs.c; break;
-      case RG_D: to_op = regs.d; break;
-      case RG_E: to_op = regs.e; break;
-      case RG_H: to_op = regs.h; break;
-      case RG_L: to_op = regs.l; break;
-      case RG_A: to_op = regs.a; break;
-      default: UNI(); return;
+      case RG_B:
+        to_op = regs.b;
+        break;
+      case RG_C:
+        to_op = regs.c;
+        break;
+      case RG_D:
+        to_op = regs.d;
+        break;
+      case RG_E:
+        to_op = regs.e;
+        break;
+      case RG_H:
+        to_op = regs.h;
+        break;
+      case RG_L:
+        to_op = regs.l;
+        break;
+      case RG_A:
+        to_op = regs.a;
+        break;
+      default:
+        UNI();
+        return;
     }
   }
 
@@ -1963,14 +2469,30 @@ void SM83::SWAP(void) {
     write_byte(regs.hl, to_op);
   } else {
     switch (CB_GET_DST) {
-      case RG_B: regs.b = to_op; break;
-      case RG_C: regs.c = to_op; break;
-      case RG_D: regs.d = to_op; break;
-      case RG_E: regs.e = to_op; break;
-      case RG_H: regs.h = to_op; break;
-      case RG_L: regs.l = to_op; break;
-      case RG_A: regs.a = to_op; break;
-      default: UNI(); return;
+      case RG_B:
+        regs.b = to_op;
+        break;
+      case RG_C:
+        regs.c = to_op;
+        break;
+      case RG_D:
+        regs.d = to_op;
+        break;
+      case RG_E:
+        regs.e = to_op;
+        break;
+      case RG_H:
+        regs.h = to_op;
+        break;
+      case RG_L:
+        regs.l = to_op;
+        break;
+      case RG_A:
+        regs.a = to_op;
+        break;
+      default:
+        UNI();
+        return;
     }
   }
 }
@@ -1983,14 +2505,30 @@ void SM83::SRL(void) {
   } else {
     cycles = 8;
     switch (CB_GET_DST) {
-      case RG_B: to_op = regs.b; break;
-      case RG_C: to_op = regs.c; break;
-      case RG_D: to_op = regs.d; break;
-      case RG_E: to_op = regs.e; break;
-      case RG_H: to_op = regs.h; break;
-      case RG_L: to_op = regs.l; break;
-      case RG_A: to_op = regs.a; break;
-      default: UNI(); return;
+      case RG_B:
+        to_op = regs.b;
+        break;
+      case RG_C:
+        to_op = regs.c;
+        break;
+      case RG_D:
+        to_op = regs.d;
+        break;
+      case RG_E:
+        to_op = regs.e;
+        break;
+      case RG_H:
+        to_op = regs.h;
+        break;
+      case RG_L:
+        to_op = regs.l;
+        break;
+      case RG_A:
+        to_op = regs.a;
+        break;
+      default:
+        UNI();
+        return;
     }
   }
 
@@ -2005,14 +2543,30 @@ void SM83::SRL(void) {
     write_byte(regs.hl, to_op);
   } else {
     switch (CB_GET_DST) {
-      case RG_B: regs.b = to_op; break;
-      case RG_C: regs.c = to_op; break;
-      case RG_D: regs.d = to_op; break;
-      case RG_E: regs.e = to_op; break;
-      case RG_H: regs.h = to_op; break;
-      case RG_L: regs.l = to_op; break;
-      case RG_A: regs.a = to_op; break;
-      default: UNI(); return;
+      case RG_B:
+        regs.b = to_op;
+        break;
+      case RG_C:
+        regs.c = to_op;
+        break;
+      case RG_D:
+        regs.d = to_op;
+        break;
+      case RG_E:
+        regs.e = to_op;
+        break;
+      case RG_H:
+        regs.h = to_op;
+        break;
+      case RG_L:
+        regs.l = to_op;
+        break;
+      case RG_A:
+        regs.a = to_op;
+        break;
+      default:
+        UNI();
+        return;
     }
   }
 }
@@ -2025,14 +2579,30 @@ void SM83::BIT(void) {
   } else {
     cycles = 8;
     switch (CB_GET_DST) {
-      case RG_B: to_op = regs.b; break;
-      case RG_C: to_op = regs.c; break;
-      case RG_D: to_op = regs.d; break;
-      case RG_E: to_op = regs.e; break;
-      case RG_H: to_op = regs.h; break;
-      case RG_L: to_op = regs.l; break;
-      case RG_A: to_op = regs.a; break;
-      default: UNI(); return;
+      case RG_B:
+        to_op = regs.b;
+        break;
+      case RG_C:
+        to_op = regs.c;
+        break;
+      case RG_D:
+        to_op = regs.d;
+        break;
+      case RG_E:
+        to_op = regs.e;
+        break;
+      case RG_H:
+        to_op = regs.h;
+        break;
+      case RG_L:
+        to_op = regs.l;
+        break;
+      case RG_A:
+        to_op = regs.a;
+        break;
+      default:
+        UNI();
+        return;
     }
   }
 
@@ -2048,14 +2618,30 @@ void SM83::RES(void) {
   } else {
     cycles = 8;
     switch (CB_GET_DST) {
-      case RG_B: regs.b &= ~(1 << CB_GET_OPT); break;
-      case RG_C: regs.c &= ~(1 << CB_GET_OPT); break;
-      case RG_D: regs.d &= ~(1 << CB_GET_OPT); break;
-      case RG_E: regs.e &= ~(1 << CB_GET_OPT); break;
-      case RG_H: regs.h &= ~(1 << CB_GET_OPT); break;
-      case RG_L: regs.l &= ~(1 << CB_GET_OPT); break;
-      case RG_A: regs.a &= ~(1 << CB_GET_OPT); break;
-      default: UNI(); return;
+      case RG_B:
+        regs.b &= ~(1 << CB_GET_OPT);
+        break;
+      case RG_C:
+        regs.c &= ~(1 << CB_GET_OPT);
+        break;
+      case RG_D:
+        regs.d &= ~(1 << CB_GET_OPT);
+        break;
+      case RG_E:
+        regs.e &= ~(1 << CB_GET_OPT);
+        break;
+      case RG_H:
+        regs.h &= ~(1 << CB_GET_OPT);
+        break;
+      case RG_L:
+        regs.l &= ~(1 << CB_GET_OPT);
+        break;
+      case RG_A:
+        regs.a &= ~(1 << CB_GET_OPT);
+        break;
+      default:
+        UNI();
+        return;
     }
   }
 }
@@ -2067,14 +2653,30 @@ void SM83::SET(void) {
   } else {
     cycles = 8;
     switch (CB_GET_DST) {
-      case RG_B: regs.b |= (1 << CB_GET_OPT); break;
-      case RG_C: regs.c |= (1 << CB_GET_OPT); break;
-      case RG_D: regs.d |= (1 << CB_GET_OPT); break;
-      case RG_E: regs.e |= (1 << CB_GET_OPT); break;
-      case RG_H: regs.h |= (1 << CB_GET_OPT); break;
-      case RG_L: regs.l |= (1 << CB_GET_OPT); break;
-      case RG_A: regs.a |= (1 << CB_GET_OPT); break;
-      default: UNI(); return;
+      case RG_B:
+        regs.b |= (1 << CB_GET_OPT);
+        break;
+      case RG_C:
+        regs.c |= (1 << CB_GET_OPT);
+        break;
+      case RG_D:
+        regs.d |= (1 << CB_GET_OPT);
+        break;
+      case RG_E:
+        regs.e |= (1 << CB_GET_OPT);
+        break;
+      case RG_H:
+        regs.h |= (1 << CB_GET_OPT);
+        break;
+      case RG_L:
+        regs.l |= (1 << CB_GET_OPT);
+        break;
+      case RG_A:
+        regs.a |= (1 << CB_GET_OPT);
+        break;
+      default:
+        UNI();
+        return;
     }
   }
 }

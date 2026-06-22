@@ -32,6 +32,8 @@ class IO {
 
   // Joypad
   uint8_t iP1JOYP;  // Only store upper nibble. Button values are public uints
+  uint8_t control_buttons;
+  uint8_t dpad_buttons;
 
  public:
   IO();
@@ -40,8 +42,14 @@ class IO {
   void reset();
 
   // Joypad
-  uint8_t control_buttons;
-  uint8_t dpad_buttons;
+  void update_DPad_u(bool val);
+  void update_DPad_d(bool val);
+  void update_DPad_l(bool val);
+  void update_DPad_r(bool val);
+  void update_a(bool val);
+  void update_b(bool val);
+  void update_start(bool val);
+  void update_select(bool val);
 
   void io_write(uint16_t addr, uint8_t data);
   uint8_t io_read(uint16_t addr);

@@ -6,8 +6,8 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
-#include "core/IBus.h"
-#include "core/SM83.h"
+#include "Bus/IBus.h"
+#include "Cpu/SM83.h"
 using json = nlohmann::json;
 
 #include <array>

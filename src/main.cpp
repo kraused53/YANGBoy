@@ -1,42 +1,27 @@
-#include <spdlog/sinks/stdout_color_sinks.h>
-#include <spdlog/spdlog.h>
-
 #include <filesystem>
 #include <iostream>
 
-#include "core/Bus.h"
+#include "Engine/Engine.h"
 
-int main() {
-  auto logger = spdlog::stdout_color_mt("yangboy");
-  spdlog::set_default_logger(logger);
-  spdlog::set_level(spdlog::level::info);  // set via config/arg in practice
-
-  // std::filesystem::path path = "test_roms/cpu/01-special.gb";
-  std::filesystem::path path = "test_roms/cpu/02-interrupts.gb";
-  //  std::filesystem::path path = "test_roms/cpu/03-op sp,hl.gb";
-  //  std::filesystem::path path = "test_roms/cpu/04-op r,imm.gb";
-  //  std::filesystem::path path = "test_roms/cpu/05-op rp.gb";
-  //  std::filesystem::path path = "test_roms/cpu/06-ld r,r.gb";
-  //  std::filesystem::path path = "test_roms/cpu/07-jr,jp,call,ret,rst.gb";
-  //  std::filesystem::path path = "test_roms/cpu/08-misc instrs.gb";
-  //  std::filesystem::path path = "test_roms/cpu/09-op r,r.gb";
-  //  std::filesystem::path path = "test_roms/cpu/10-bit ops.gb";
-  // std::filesystem::path path = "test_roms/cpu/11-op a,(hl).gb";
-
-  Bus system;
-  if (!system.cartridge.load_rom(path)) {
+int main(int argc, char** argv) {
+  if (argc != 2) {
+    printf("Usage: YANGBoy <path/to.rom/file.gb>");
     return 1;
   }
 
-  uint64_t cnt = 0;
-  while (!system.test_done) {
-    system.clock();
-    if (cnt >= 10000000) {
-      spdlog::error("Test finished before rom indicated a success...");
-      break;
-    }
-    cnt++;
+  Engine engine;
+
+  if (!engine.is_initialized()) {
+    printf("main.cpp : Could not initialize engine!");
+    return 1;
   }
+
+  if (!engine.load_rom(argv[1])) {
+    printf("main.cpp : Could not load ROM file [%s]", argv[1]);
+    return 1;
+  }
+
+  engine.run();
 
   return 0;
 }

@@ -1,13 +1,10 @@
-#include "core/Timer.h"
+#include "Timer.h"
 
-#include <spdlog/sinks/stdout_color_sinks.h>
-#include <spdlog/spdlog.h>
-
+#include "Bus/Bus.h"
 #include "IORegisters.h"
 #include "Interrupts.h"
-#include "core/Bus.h"
 
-Timer::Timer() { spdlog::info("Initializing Timer..."); }
+Timer::Timer() {}
 
 Timer::~Timer() {}
 
@@ -18,7 +15,6 @@ uint8_t Timer::read_byte(uint16_t addr) { return bus->read(addr); }
 void Timer::request_timer_interrupt() { bus->request_interrupt(TIMER_FLAG); }
 
 void Timer::reset() {
-  spdlog::info("Timer Reset...");
   div_counter = 0;
   tima_counter = 0;
 }

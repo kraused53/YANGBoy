@@ -1,19 +1,12 @@
-#include "core/IO.h"
-
-#include <spdlog/sinks/stdout_color_sinks.h>
-#include <spdlog/spdlog.h>
+#include "IO.h"
 
 #include "IORegisters.h"
 
-IO::IO() {
-  spdlog::info("Initializing IO...");
-  reset();
-}
+IO::IO() { reset(); }
 
 IO::~IO() {}
 
 void IO::reset() {
-  spdlog::info("IO Reset...");
   // Reset registers
   iSB = 0;
   iSC = 0;
@@ -22,6 +15,20 @@ void IO::reset() {
   iTMA = 0x00;
   iTAC = 0xF8;
   iP1JOYP = 0x00;
+  iLCDC = 0x00;
+  iSTAT = 0x00;
+  iSCY = 0x00;
+  iSCX = 0x00;
+  iLY = 0x00;
+  iLYC = 0x00;
+  iBGP = 0x00;
+  iOBP0 = 0x00;
+  iOBP1 = 0x00;
+  iWY = 0x00;
+  iWX = 0x00;
+
+  control_buttons = 0x0F;
+  dpad_buttons = 0x0F;
 }
 
 uint8_t IO::io_read(uint16_t addr) {
@@ -188,5 +195,69 @@ void IO::io_write(uint16_t addr, uint8_t data) {
       // spdlog::warn("IO register ${:04x} has not been implemented yet... ",
       //              addr);
       break;
+  }
+}
+
+void IO::update_DPad_u(bool val) {
+  if (!val) {
+    dpad_buttons |= (1 << 2);
+  } else {
+    dpad_buttons &= ~(1 << 2);
+  }
+}
+
+void IO::update_DPad_d(bool val) {
+  if (!val) {
+    dpad_buttons |= (1 << 3);
+  } else {
+    dpad_buttons &= ~(1 << 3);
+  }
+}
+
+void IO::update_DPad_l(bool val) {
+  if (!val) {
+    dpad_buttons |= (1 << 1);
+  } else {
+    dpad_buttons &= ~(1 << 1);
+  }
+}
+
+void IO::update_DPad_r(bool val) {
+  if (!val) {
+    dpad_buttons |= (1 << 0);
+  } else {
+    dpad_buttons &= ~(1 << 0);
+  }
+}
+
+void IO::update_a(bool val) {
+  if (!val) {
+    control_buttons |= (1 << 0);
+  } else {
+    control_buttons &= ~(1 << 0);
+  }
+}
+
+void IO::update_b(bool val) {
+  if (!val) {
+    control_buttons |= (1 << 1);
+  } else {
+    control_buttons &= ~(1 << 1);
+  }
+}
+
+void IO::update_start(bool val) {
+  if (!val) {
+    control_buttons |= (1 << 3);
+  } else {
+    control_buttons &= ~(1 << 3);
+  }
+}
+
+void IO::update_select(bool val) {
+  if (!val) {
+    control_buttons |= (1 << 2);
+  } else {
+    control_buttons &= ~(1 << 2);
   }
 }

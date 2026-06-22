@@ -1,3 +1,3 @@
-#include "core/IBus.h"
+#include "IBus.h"
 
 IBus::~IBus() = default;

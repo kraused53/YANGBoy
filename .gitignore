@@ -3,3 +3,4 @@ JSON/
 bin/
 .clang-format
 game_roms/
+test_roms/
